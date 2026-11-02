@@ -63,7 +63,7 @@ export function Sidebar({
     { id: "dashboard", label: "Overview", icon: LayoutDashboard },
     { id: "journal", label: "Prediction Journal", icon: BookOpen },
     { id: "credibility", label: "Credibility Matrix", icon: Award },
-    { id: "analytics", label: "Consensus Intel", icon: BarChart3 },
+    { id: "analytics", label: "Consensus", icon: BarChart3 },
     { id: "bankroll", label: "Bankroll", icon: Wallet },
   ];
 

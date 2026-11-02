@@ -21,15 +21,18 @@ import {
   MarketOpinion,
   ForecasterAnalysis,
 } from "@/lib/credibility";
+import { groupOpenMarkets } from "@/lib/markets";
 
 interface CredibilityViewProps {
   predictions: PredictionRecord[];
   walrusMemoriesCount: number;
+  isMainnetConnected?: boolean;
 }
 
 export function CredibilityView({
   predictions,
   walrusMemoriesCount,
+  isMainnetConnected = false,
 }: CredibilityViewProps) {
   // PURE CALCULATION: Derived strictly from actual predictions / recalled memories
   const forecasters: ForecasterAnalysis[] = useMemo(() => {
@@ -43,27 +46,32 @@ export function CredibilityView({
     return map;
   }, [forecasters]);
 
-  // PURE CONSENSUS EVALUATION: Run consensus() on active open markets
+  // PURE CONSENSUS EVALUATION: Run consensus() on active open markets from groupOpenMarkets
+  const openMarkets = useMemo(() => {
+    return groupOpenMarkets(predictions, { includeBacktest: !isMainnetConnected });
+  }, [predictions, isMainnetConnected]);
+
   const consensusComparison = useMemo(() => {
-    const openPredictions = predictions.filter((p) => p.outcome === "PENDING");
-    const activeMarket = openPredictions[0]?.target || "UCL Real Madrid vs AC Milan";
+    if (openMarkets.length > 0) {
+      const topMarket = openMarkets[0];
+      const result = consensus(topMarket.label, topMarket.opinions, weightsMap);
+      return { result, isIllustrative: false, market: topMarket.label };
+    }
 
-    // Extract opinions for this market or build multi-analyst opinions
-    const opinions: MarketOpinion[] = openPredictions.length >= 2
-      ? openPredictions.slice(0, 4).map((p) => ({
-          analyst: p.analyst,
-          pick: p.pick,
-          confidence: p.confidence || 4,
-        }))
-      : [
-          { analyst: "@MacroQuant", pick: "RMA WIN & OVER 2.5", confidence: 4.5 },
-          { analyst: "@TacticsDesk", pick: "RMA WIN & OVER 2.5", confidence: 4.0 },
-          { analyst: "@PitchSignals", pick: "MILAN DRAW NO BET", confidence: 4.0 },
-          { analyst: "@AlphaForecaster", pick: "RMA WIN & OVER 2.5", confidence: 4.2 },
-        ];
+    // In DEMO mode (not LIVE), provide one illustrative example built from real demo forecaster handles
+    if (!isMainnetConnected && forecasters.length >= 2) {
+      const h1 = forecasters[0].handle;
+      const h2 = forecasters[1].handle;
+      const demoOpinions: MarketOpinion[] = [
+        { analyst: h1, pick: "HOME WIN", confidence: 4.5 },
+        { analyst: h2, pick: "AWAY WIN", confidence: 4.0 },
+      ];
+      const result = consensus("Demonstration Match", demoOpinions, weightsMap);
+      return { result, isIllustrative: true, market: "Demonstration Match (Real Demo Forecasters)" };
+    }
 
-    return consensus(activeMarket, opinions, weightsMap);
-  }, [predictions, weightsMap]);
+    return null;
+  }, [openMarkets, isMainnetConnected, forecasters, weightsMap]);
 
   return (
     <div className="space-y-6">
@@ -217,96 +225,110 @@ export function CredibilityView({
       )}
 
       {/* Pure Consensus Demonstration: Before vs After Memory */}
-      <div className="liquid-glass p-6 space-y-4">
-        <BentoHeader
-          title="Consensus Engine: Unweighted vs Memory-Weighted"
-          subtitle={`Live consensus calculation on open fixture: "${consensusComparison.market}"`}
-          action={
-            consensusComparison.confidenceShift !== 0 ? (
-              <span className="flex items-center gap-1 text-[11px] font-mono-num font-semibold text-[var(--win)] bg-[var(--win-bg)] px-2.5 py-1 rounded-full border border-[var(--win)]/30">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>
-                  {consensusComparison.confidenceShift > 0 ? "+" : ""}
-                  {consensusComparison.confidenceShift}% Confidence Shift
-                </span>
-              </span>
-            ) : undefined
-          }
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono-num">
-          {/* Unweighted Consensus */}
-          <div className="p-4 rounded-[10px] bg-[var(--border-subtle)] border border-[var(--border)] space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-              <XCircle className="w-3.5 h-3.5 text-[var(--loss)]" />
-              Before Memory (Flat 1.0x Weight)
-            </span>
-            <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] space-y-1">
-              <span className="text-[10px] text-[var(--muted)] uppercase block">Consensus Call</span>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[var(--text)]">
-                  {consensusComparison.unweightedPick}
-                </span>
-                <span className="text-xs text-[var(--muted)] font-bold">
-                  {consensusComparison.unweightedConfidence}% Conviction
-                </span>
-              </div>
-            </div>
-            <p className="text-[11px] text-[var(--muted)] leading-relaxed">
-              Every analyst receives identical 1.0x voting power regardless of their past hit rate or unhedged draw variance.
-            </p>
-          </div>
-
-          {/* Memory-Weighted Consensus */}
-          <div className="p-4 rounded-[10px] bg-[var(--accent)]/5 border border-[var(--accent)]/30 space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[var(--win)]" />
-              With Walrus Memory (Adaptive Weights)
-            </span>
-            <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--accent)]/30 space-y-1">
-              <span className="text-[10px] text-[var(--muted)] uppercase block">Recalibrated Consensus</span>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[var(--accent)]">
-                  {consensusComparison.weightedPick}
-                </span>
-                <span className="text-xs text-[var(--win)] font-bold">
-                  {consensusComparison.weightedConfidence}% Conviction
-                </span>
-              </div>
-            </div>
-            <p className="text-[11px] text-[var(--text)]/90 leading-relaxed">
-              High-accuracy forecasters ({consensusComparison.boostedSharps.join(", ") || "Sharps"}) have their weight scaled up, while volatile predictors ({consensusComparison.dampenedForecasters.join(", ") || "erratic forecasters"}) are dampened.
-            </p>
-          </div>
+      {!consensusComparison ? (
+        <div className="liquid-glass p-8 text-center text-xs font-mono-num text-[var(--muted)] space-y-2">
+          <p className="font-bold text-sm text-[var(--text)]">No Multi-Analyst Markets Active</p>
+          <p>Add two forecasts on the same match from different handles to see weighted vs. unweighted consensus.</p>
         </div>
+      ) : (
+        <div className="liquid-glass p-6 space-y-4">
+          <BentoHeader
+            title="Consensus Engine: Unweighted vs Memory-Weighted"
+            subtitle={`Consensus calculation on market: "${consensusComparison.market}"`}
+            action={
+              <div className="flex items-center gap-2">
+                {consensusComparison.isIllustrative && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono-num font-semibold">
+                    Illustrative example
+                  </span>
+                )}
+                {consensusComparison.result.confidenceShift !== 0 && (
+                  <span className="flex items-center gap-1 text-[11px] font-mono-num font-semibold text-[var(--win)] bg-[var(--win-bg)] px-2.5 py-1 rounded-full border border-[var(--win)]/30">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>
+                      {consensusComparison.result.confidenceShift > 0 ? "+" : ""}
+                      {consensusComparison.result.confidenceShift}% Confidence Shift
+                    </span>
+                  </span>
+                )}
+              </div>
+            }
+          />
 
-        {/* Breakdown of supporting analysts */}
-        <div className="space-y-2 pt-2 border-t border-[var(--border)]">
-          <span className="text-[10px] text-[var(--muted)] uppercase font-mono-num font-semibold block">
-            Mathematical Pick Breakdown
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono-num">
-            {consensusComparison.breakdown.map((b) => (
-              <div
-                key={b.pick}
-                className="p-2.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] flex items-center justify-between"
-              >
-                <div>
-                  <span className="font-bold text-[var(--text)] block">{b.pick}</span>
-                  <span className="text-[10px] text-[var(--muted)]">
-                    By: {b.supportingAnalysts.join(", ")}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono-num">
+            {/* Unweighted Consensus */}
+            <div className="p-4 rounded-[10px] bg-[var(--border-subtle)] border border-[var(--border)] space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+                <XCircle className="w-3.5 h-3.5 text-[var(--loss)]" />
+                Before Memory (Flat 1.0x Weight)
+              </span>
+              <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-[var(--muted)] uppercase block">Consensus Call</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-[var(--text)]">
+                    {consensusComparison.result.unweightedPick}
+                  </span>
+                  <span className="text-xs text-[var(--muted)] font-bold">
+                    {consensusComparison.result.unweightedConfidence}% Conviction
                   </span>
                 </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-[var(--muted)]">
-                    Score: {b.unweightedScore} → <span className="text-[var(--accent)] font-bold">{b.weightedScore}</span>
-                  </div>
+              </div>
+              <p className="text-[11px] text-[var(--muted)] leading-relaxed">
+                Every analyst receives identical 1.0x voting power regardless of their past hit rate or unhedged draw variance.
+              </p>
+            </div>
+
+            {/* Memory-Weighted Consensus */}
+            <div className="p-4 rounded-[10px] bg-[var(--accent)]/5 border border-[var(--accent)]/30 space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[var(--win)]" />
+                With Walrus Memory (Adaptive Weights)
+              </span>
+              <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--accent)]/30 space-y-1">
+                <span className="text-[10px] text-[var(--muted)] uppercase block">Recalibrated Consensus</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-[var(--accent)]">
+                    {consensusComparison.result.weightedPick}
+                  </span>
+                  <span className="text-xs text-[var(--win)] font-bold">
+                    {consensusComparison.result.weightedConfidence}% Conviction
+                  </span>
                 </div>
               </div>
-            ))}
+              <p className="text-[11px] text-[var(--text)]/90 leading-relaxed">
+                High-accuracy forecasters ({consensusComparison.result.boostedSharps.join(", ") || "Sharps"}) have their weight scaled up, while volatile predictors ({consensusComparison.result.dampenedForecasters.join(", ") || "erratic forecasters"}) are dampened.
+              </p>
+            </div>
+          </div>
+
+          {/* Breakdown of supporting analysts */}
+          <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+            <span className="text-[10px] text-[var(--muted)] uppercase font-mono-num font-semibold block">
+              Mathematical Pick Breakdown
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono-num">
+              {consensusComparison.result.breakdown.map((b) => (
+                <div
+                  key={b.pick}
+                  className="p-2.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] flex items-center justify-between"
+                >
+                  <div>
+                    <span className="font-bold text-[var(--text)] block">{b.pick}</span>
+                    <span className="text-[10px] text-[var(--muted)]">
+                      By: {b.supportingAnalysts.join(", ")}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-[var(--muted)]">
+                      Score: {b.unweightedScore} → <span className="text-[var(--accent)] font-bold">{b.weightedScore}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Memory Recall Live Feed */}
       <div className="liquid-glass p-6 space-y-4">

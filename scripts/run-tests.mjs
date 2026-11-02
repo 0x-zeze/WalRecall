@@ -47,6 +47,13 @@ import {
 } from "../lib/dashboard-stats.ts";
 import { settleMarket } from "../lib/sports-resolver.ts";
 import { parseOdds, pnlFromOdds } from "../lib/odds.ts";
+import { marketKey, selectionKey, groupOpenMarkets } from "../lib/markets.ts";
+import {
+  computeLeagueAnalytics,
+  computeOddsRangeAnalytics,
+  computeConfidenceAnalytics,
+  computeMonthlyPnlAnalytics,
+} from "../lib/analytics.ts";
 
 let passed = 0;
 let failed = 0;
@@ -2744,6 +2751,129 @@ async function main() {
       ];
       const series = cumulativePnlSeries(recordsWithPending, "All", baseNow);
       assert.equal(series[series.length - 1].pnl, 40); // 120 - 80 = 40
+    });
+  });
+
+  await describe("FASE D: lib/markets & lib/analytics - Market Keys, Consensus & Calculated Analytics", async () => {
+    await it("marketKey stabil untuk fixture, kripto, dan manual/seed", () => {
+      // 1. Structured sports fixture
+      const sportsRecord = {
+        id: "s1",
+        fixture: { provider: "espn", eventId: "401570001", home: { name: "Arsenal" }, away: { name: "Chelsea" } },
+        market: { type: "moneyline", selection: "home" },
+      };
+      assert.equal(marketKey(sportsRecord), "espn:401570001:moneyline:");
+
+      const sportsTotalRecord = {
+        id: "s2",
+        fixture: { provider: "espn", eventId: "401570001", home: { name: "Arsenal" }, away: { name: "Chelsea" } },
+        market: { type: "total", selection: "over", line: 2.5 },
+      };
+      assert.equal(marketKey(sportsTotalRecord), "espn:401570001:total:2.5");
+
+      // 2. Crypto target
+      const cryptoRecord = {
+        id: "c1",
+        sportType: "crypto",
+        asset: "SUI",
+        targetPrice: 2.5,
+        deadline: "2026-11-04T12:00:00.000Z",
+      };
+      const expectedDeadlineMin = String(Math.floor(new Date("2026-11-04T12:00:00.000Z").getTime() / 60000));
+      assert.equal(marketKey(cryptoRecord), `crypto:sui:${expectedDeadlineMin}:2.5`);
+
+      // 3. Manual / seed target
+      const manualRecord = {
+        id: "m1",
+        target: "  UCL Real Madrid vs AC Milan  ",
+      };
+      assert.equal(marketKey(manualRecord), "manual:ucl real madrid vs ac milan");
+    });
+
+    await it("selectionKey mengembalikan pilihan normalisasi dengan benar", () => {
+      assert.equal(selectionKey({ market: { selection: "home" } }), "home");
+      assert.equal(selectionKey({ direction: "above" }), "above");
+      assert.equal(selectionKey({ pick: "  Over 2.5 Goals  " }), "over 2.5 goals");
+    });
+
+    await it("groupOpenMarkets mengabaikan pasar dengan 1 analyst, backtest records, dan records resolved", () => {
+      const records = [
+        // Resolved record -> ignored
+        { id: "r1", outcome: "ACCURATE", analyst: "@A1", target: "Match 1", timestamp: 1000 },
+        // Backtest pending record -> ignored
+        { id: "rec-13", outcome: "PENDING", analyst: "@SeedAnalyst", target: "Match 1", timestamp: 1000 },
+        // Live market with only 1 analyst -> ignored (< 2 analysts)
+        { id: "live-1", outcome: "PENDING", analyst: "@SoloTrader", target: "Match Solo", timestamp: 2000 },
+        // Live market with 2 different analysts -> included!
+        { id: "live-2a", outcome: "PENDING", analyst: "@Alpha1", target: "Arsenal vs Chelsea", timestamp: 3000 },
+        { id: "live-2b", outcome: "PENDING", analyst: "@Alpha2", target: "Arsenal vs Chelsea", timestamp: 3001 },
+      ];
+
+      const groups = groupOpenMarkets(records);
+      assert.equal(groups.length, 1);
+      assert.equal(groups[0].opinions.length, 2);
+      assert.equal(groups[0].label, "Arsenal vs Chelsea");
+    });
+
+    await it("konsensus berbobot vs tidak berbobot berubah sesuai hitungan bobot (pivot test)", () => {
+      // Scenario: A weights 1.6 picks "HOME", B weights 0.6 picks "AWAY", C weights 1.0 picks "AWAY"
+      // Unweighted: HOME has 1 vote, AWAY has 2 votes -> AWAY wins!
+      // Weighted: HOME has 1.6 score, AWAY has (0.6 + 1.0 = 1.6) or with confidences:
+      // A (conf 4.0 * 1.6 = 6.4) for HOME
+      // B (conf 4.0 * 0.6 = 2.4) + C (conf 4.0 * 0.9 = 3.6) = 6.0 for AWAY -> HOME wins with memory!
+      const opinions = [
+        { analyst: "@SharpA", pick: "HOME", confidence: 4.0 },
+        { analyst: "@FadeB", pick: "AWAY", confidence: 4.0 },
+        { analyst: "@NeutralC", pick: "AWAY", confidence: 4.0 },
+      ];
+      const weightsMap = new Map([
+        ["@SharpA", 1.6],
+        ["@FadeB", 0.6],
+        ["@NeutralC", 0.9],
+      ]);
+
+      const res = consensus("Match X", opinions, weightsMap);
+      assert.equal(res.unweightedPick, "AWAY"); // 2 votes vs 1 vote
+      assert.equal(res.weightedPick, "HOME"); // 4.0 * 1.6 = 6.4 > (4.0 * 0.6 + 4.0 * 0.9 = 6.0)
+      assert.equal(res.pivoted, true);
+      assert.equal(res.boostedSharps.includes("@SharpA"), true);
+      assert.equal(res.dampenedForecasters.includes("@FadeB"), true);
+    });
+
+    await it("analitik: computeLeagueAnalytics, computeOddsRangeAnalytics, computeConfidenceAnalytics, computeMonthlyPnlAnalytics tidak crash pada data kosong", () => {
+      assert.deepEqual(computeLeagueAnalytics([]), []);
+      assert.equal(computeOddsRangeAnalytics([]).length, 4); // 4 initialized buckets with 0 count
+      assert.equal(computeConfidenceAnalytics([]).length, 5); // 5 star tiers with 0 count
+      assert.deepEqual(computeMonthlyPnlAnalytics([]), []);
+    });
+
+    await it("analitik: mengelompokkan kategori, odds range, confidence, dan menandai low sample (n < 5)", () => {
+      const records = [
+        { id: "1", outcome: "ACCURATE", sportType: "crypto", leagueOrAsset: "SUI", odds: "-150", confidence: 5, pnl: 100, timestamp: 1730000000000 },
+        { id: "2", outcome: "FAILED", sportType: "crypto", leagueOrAsset: "SUI", odds: "-110", confidence: 4, pnl: -100, timestamp: 1730000000000 },
+        { id: "3", outcome: "ACCURATE", sportType: "soccer", leagueOrAsset: "EPL", odds: "+150", confidence: 3, pnl: 150, timestamp: 1730100000000 },
+      ];
+
+      const leagues = computeLeagueAnalytics(records);
+      assert.equal(leagues.length, 2);
+      const sui = leagues.find((l) => l.name === "SUI");
+      assert.equal(sui.picks, 2);
+      assert.equal(sui.winRate, 50);
+      assert.equal(sui.lowSample, true); // 2 < 5
+
+      const oddsRanges = computeOddsRangeAnalytics(records);
+      const heavy = oddsRanges.find((r) => r.range.startsWith("Heavy Favs"));
+      assert.equal(heavy.count, 1); // -150
+      assert.equal(heavy.lowSample, true);
+
+      const confs = computeConfidenceAnalytics(records);
+      const fiveStar = confs.find((c) => c.stars === 5);
+      assert.equal(fiveStar.count, 1);
+      assert.equal(fiveStar.hitRate, 100);
+
+      const monthly = computeMonthlyPnlAnalytics(records);
+      assert.equal(monthly.length, 1);
+      assert.equal(monthly[0].pnl, 150); // 100 - 100 + 150
     });
   });
 

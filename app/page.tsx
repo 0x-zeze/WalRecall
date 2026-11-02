@@ -242,12 +242,23 @@ export default function Home() {
             <CredibilityView
               predictions={predictions}
               walrusMemoriesCount={countOnChainBlobs(predictions)}
+              isMainnetConnected={isMainnetConnected}
             />
           )}
 
-          {activeTab === "analytics" && <AnalyticsView />}
+          {activeTab === "analytics" && (
+            <AnalyticsView
+              predictions={predictions}
+              isMainnetConnected={isMainnetConnected}
+            />
+          )}
 
-          {activeTab === "bankroll" && <BankrollView />}
+          {activeTab === "bankroll" && (
+            <BankrollView
+              predictions={predictions}
+              isMainnetConnected={isMainnetConnected}
+            />
+          )}
         </main>
       </div>
     </ThemeProvider>
