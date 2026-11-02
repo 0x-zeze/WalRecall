@@ -6,10 +6,10 @@ import { AnimatedNumber } from "../ui/AnimatedNumber";
 import type { PredictionRecord } from "@/lib/types";
 
 const COLORS: Record<string, string> = {
-  crypto: "var(--accent)",
-  soccer: "#a855f7",
-  nba: "#f97316",
-  sports: "#22c55e",
+  crypto: "#72BFFF",
+  soccer: "#38D9A9",
+  nba: "#FFD43B",
+  sports: "#4BA3E3",
 };
 
 export function RoiCategoryCard({ predictions = [] }: { predictions?: PredictionRecord[] }) {
@@ -28,7 +28,7 @@ export function RoiCategoryCard({ predictions = [] }: { predictions?: Prediction
     name,
     roi: value.stake > 0 ? Number(((value.pnl / value.stake) * 100).toFixed(1)) : 0,
     pnl: value.pnl,
-    color: COLORS[name] || "var(--accent)",
+    color: COLORS[name] || "#72BFFF",
     picksCount: value.picks,
   }));
 
@@ -40,25 +40,28 @@ export function RoiCategoryCard({ predictions = [] }: { predictions?: Prediction
     <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0.2} className="flex flex-col justify-between">
       <BentoHeader
         title="ROI by Sector"
-        subtitle="From resolved records only. Simulated PnL."
+        subtitle="Simulated return across asset classes"
       />
 
       <div className="space-y-3.5 my-1">
         {categories.length === 0 ? (
-          <p className="text-xs text-[var(--muted)]">No resolved records.</p>
+          <p className="text-xs text-[var(--muted)] font-mono-num py-4 text-center">No resolved records in history.</p>
         ) : (
           categories.map((cat) => (
-            <div key={cat.name} className="space-y-1">
+            <div key={cat.name} className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono-num">
-                <span className="text-[var(--text)] font-medium capitalize">{cat.name}</span>
+                <span className="text-[var(--text)] font-semibold capitalize flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                  {cat.name}
+                </span>
                 <span className={`font-bold ${cat.roi >= 0 ? "text-[var(--win)]" : "text-[var(--loss)]"}`}>
                   {cat.roi >= 0 ? "+" : ""}
                   <AnimatedNumber value={cat.roi} decimals={1} suffix="%" />
                 </span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-[var(--surface-subtle)] overflow-hidden">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.min(Math.abs(cat.roi), 100)}%`,
                     backgroundColor: cat.color,
@@ -67,7 +70,7 @@ export function RoiCategoryCard({ predictions = [] }: { predictions?: Prediction
               </div>
               <div className="flex justify-between text-[10px] text-[var(--muted)] font-mono-num">
                 <span>{cat.picksCount} resolved</span>
-                <span>{cat.pnl >= 0 ? "+" : "-"}${Math.abs(cat.pnl).toLocaleString()} simulated</span>
+                <span>{cat.pnl >= 0 ? "+" : "-"}${Math.abs(cat.pnl).toLocaleString()} net</span>
               </div>
             </div>
           ))
@@ -75,8 +78,10 @@ export function RoiCategoryCard({ predictions = [] }: { predictions?: Prediction
       </div>
 
       <div className="text-[11px] text-[var(--muted)] pt-3 border-t border-[var(--border)] font-mono-num flex justify-between">
-        <span>Combined resolved ROI</span>
-        <span className="text-[var(--accent)] font-semibold">{combined >= 0 ? "+" : ""}{combined}%</span>
+        <span>Combined ROI</span>
+        <span className={`font-bold ${combined >= 0 ? "text-[var(--win)]" : "text-[var(--loss)]"}`}>
+          {combined >= 0 ? "+" : ""}{combined}%
+        </span>
       </div>
     </BentoCard>
   );

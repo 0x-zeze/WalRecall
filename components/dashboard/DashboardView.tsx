@@ -19,6 +19,7 @@ import {
   simulatedBalance,
   liveOpenPredictions,
 } from "@/lib/dashboard-stats";
+import { Shield } from "lucide-react";
 
 interface DashboardViewProps {
   predictions: PredictionRecord[];
@@ -58,6 +59,36 @@ export function DashboardView({
 
   return (
     <div className="space-y-4">
+      {/* Lunetra Top Institutional Terminal Banner */}
+      <div className="lunetra-card p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
+              <Shield className="w-4 h-4" />
+            </span>
+            <h2 className="text-lg font-heading font-bold text-[var(--text)] tracking-tight">
+              Institutional Intelligence Overview
+            </h2>
+          </div>
+          <p className="text-xs text-[var(--text-dim)] max-w-2xl leading-relaxed">
+            Autonomous forecaster performance & credibility telemetry anchored to Sui consensus and immutable Walrus blob storage.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 font-mono-num text-xs">
+          <div className="flex items-center gap-2 bg-[var(--surface-subtle)] px-3.5 py-2 rounded-xl border border-[var(--border)]">
+            <span className="w-2 h-2 rounded-full bg-[var(--win)] shadow-[0_0_8px_var(--win)]" />
+            <span className="text-[11px] text-[var(--text)] font-semibold">
+              {resolved.length} Resolved Events
+            </span>
+            <span className="text-[var(--border)]">|</span>
+            <span className="text-[11px] text-[var(--accent)] font-semibold">
+              {pending} Active Positions
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-12 gap-4">
         <PnLCurveCard records={predictions} />
         <WinRateRingCard

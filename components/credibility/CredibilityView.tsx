@@ -76,35 +76,35 @@ export function CredibilityView({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="liquid-glass p-4 sm:p-6 flex flex-col gap-4">
+      <div className="lunetra-card p-4 sm:p-6 flex flex-col gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Award className="w-5 h-5 text-[var(--accent-violet)] shrink-0" />
+            <Award className="w-5 h-5 text-[var(--accent)] shrink-0" />
             <h2 className="text-base sm:text-lg font-heading font-bold text-[var(--text)] leading-tight">
               Forecaster Credibility Matrix
             </h2>
-            <span className="text-[10px] font-mono-num px-2 py-0.5 rounded-full bg-[var(--accent-violet)]/10 text-[var(--accent-violet)] border border-[var(--accent-violet)]/20 font-semibold shadow-[0_0_8px_-2px_var(--accent-violet)]">
+            <span className="text-[10px] font-mono-num px-2.5 py-0.5 rounded-full bg-[#72BFFF]/10 text-[var(--accent)] border border-[#72BFFF]/30 font-semibold shadow-sm">
               Walrus Consensus Engine
             </span>
           </div>
-          <p className="text-xs text-[var(--muted)] leading-relaxed">
+          <p className="text-xs text-[var(--text-dim)] leading-relaxed">
             Credibility weights are dynamically calculated from immutable audit records recalled from Walrus Memory.
-            Formula: <span className="font-mono-num font-semibold text-[var(--text)] break-all">Weight = max(0.40, min(2.40, 1.0 + delta / 20))</span>.
-            <span className="block mt-1 text-[11px] text-[var(--muted)]/80">
-              Note: Baseline scores originate from historical October 2024 backtest seeds, while live forecasts dynamically adjust analyst multipliers in real-time.
+            Formula: <span className="font-mono-num font-semibold text-[var(--highlight)] break-all">Weight = max(0.40, min(2.40, 1.0 + delta / 20))</span>.
+            <span className="block mt-1 text-[11px] text-[var(--muted)]">
+              Historical baseline scores evaluate long-term signal accuracy, while live forecasts dynamically adjust analyst multipliers in real-time.
             </span>
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-3 bg-[var(--glass-surface-1)] px-4 py-2.5 rounded-xl border border-[var(--border)] text-xs font-mono-num w-full backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3 bg-[var(--surface-subtle)] px-4 py-2.5 rounded-xl border border-[var(--border)] text-xs font-mono-num w-full">
           <div>
-            <span className="text-[10px] text-[var(--muted)] uppercase block">Weight Range</span>
-            <span className="font-bold text-[var(--accent-violet)]">0.40x — 2.40x</span>
+            <span className="text-[10px] text-[var(--muted)] uppercase block font-medium">Dynamic Multiplier Range</span>
+            <span className="font-bold text-[var(--accent)]">0.40x — 2.40x</span>
           </div>
           <div className="h-6 w-px bg-[var(--border)]" />
           <div>
-            <span className="text-[10px] text-[var(--muted)] uppercase block">Evaluated Analysts</span>
-            <span className="font-bold text-[var(--win)]">{forecasters.length} Dynamic</span>
+            <span className="text-[10px] text-[var(--muted)] uppercase block font-medium">Evaluated Analysts</span>
+            <span className="font-bold text-[var(--win)]">{forecasters.length} Tracked</span>
           </div>
         </div>
       </div>

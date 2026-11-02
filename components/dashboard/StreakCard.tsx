@@ -2,7 +2,7 @@
 
 import React from "react";
 import { BentoCard, BentoHeader } from "../ui/BentoCard";
-import { Flame } from "lucide-react";
+import { Zap } from "lucide-react";
 
 interface StreakCardProps {
   currentStreak: string;
@@ -14,13 +14,13 @@ export function StreakCard({ currentStreak, recentPicks, hotRun = false }: Strea
   return (
     <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0.15} className="flex flex-col justify-between">
       <BentoHeader
-        title="Current Streak"
-        subtitle="Newest resolved outcomes"
+        title="Execution Streak"
+        subtitle="Chronological sequence of resolved forecasts"
         action={
           hotRun ? (
-            <div className="flex items-center gap-1 text-[11px] font-mono-num font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-              <Flame className="w-3 h-3 fill-amber-500" />
-              <span>Hot Run · {currentStreak}</span>
+            <div className="flex items-center gap-1 text-[11px] font-mono-num font-semibold text-[var(--win)] bg-[var(--win-bg)] px-2 py-0.5 rounded-full border border-[var(--win-border)]">
+              <Zap className="w-3 h-3 fill-[var(--win)]" />
+              <span>Alpha Run · {currentStreak}</span>
             </div>
           ) : null
         }
@@ -39,11 +39,11 @@ export function StreakCard({ currentStreak, recentPicks, hotRun = false }: Strea
           {recentPicks.map((res, i) => (
             <div
               key={i}
-              title={`Pick #${10 - i}: ${res === "W" ? "Win" : "Loss"}`}
+              title={`Pick #${10 - i}: ${res === "W" ? "Accurate (Win)" : "Failed (Loss)"}`}
               className={`w-7 h-7 rounded-[8px] flex items-center justify-center text-[11px] font-bold font-mono-num transition-transform hover:scale-110 cursor-default ${
                 res === "W"
-                  ? "bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/30"
-                  : "bg-[var(--loss-bg)] text-[var(--loss)] border border-[var(--loss)]/30"
+                  ? "bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win-border)]"
+                  : "bg-[var(--loss-bg)] text-[var(--loss)] border border-[var(--loss-border)]"
               }`}
             >
               {res}
@@ -54,7 +54,7 @@ export function StreakCard({ currentStreak, recentPicks, hotRun = false }: Strea
 
       <div className="text-[11px] text-[var(--muted)] pt-3 border-t border-[var(--border)] font-mono-num flex justify-between">
         <span>{recentPicks.length} recent resolved</span>
-        <span>{hotRun ? "3+ consecutive wins" : "No hot run"}</span>
+        <span className="text-[var(--text-dim)]">{hotRun ? "≥3 consecutive wins" : "Standard volatility"}</span>
       </div>
     </BentoCard>
   );

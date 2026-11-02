@@ -14,7 +14,7 @@ export function BestWorstPickCard({ bestPick, worstPick }: BestWorstPickCardProp
   if (!bestPick && !worstPick) {
     return (
       <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.35}>
-        <BentoHeader title="Best and worst resolved pick" subtitle="No resolved records yet." />
+        <BentoHeader title="Outlier Yield & Drawdown" subtitle="No resolved records in dataset." />
       </BentoCard>
     );
   }
@@ -34,61 +34,61 @@ export function BestWorstPickCard({ bestPick, worstPick }: BestWorstPickCardProp
   return (
     <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.35} className="flex flex-col justify-between">
       <BentoHeader
-        title="Best and worst resolved pick"
-        subtitle="Highest and lowest simulated PnL among resolved records"
+        title="Yield Extremes"
+        subtitle="Maximum gain and drawdown among resolved records"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2">
         {/* Best Pick */}
-        <div className="p-3.5 rounded-[10px] bg-[var(--win-bg)] border border-[var(--win)]/20 space-y-2">
+        <div className="p-3.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--win-border)] space-y-2">
           <div className="flex items-center justify-between text-xs font-mono-num">
-            <span className="flex items-center gap-1.5 font-bold text-[var(--win)] uppercase text-[10px]">
+            <span className="flex items-center gap-1.5 font-bold text-[var(--win)] uppercase text-[10px] tracking-wider">
               <TrendingUp className="w-3.5 h-3.5" />
-              Highest Gain
+              Maximum Alpha
             </span>
-            <span className="font-bold text-[var(--win)]">+{bestPnl >= 0 ? `$${bestPnl}` : `-$${Math.abs(bestPnl)}`} PnL</span>
+            <span className="font-bold text-[var(--win)]">+{bestPnl >= 0 ? `$${bestPnl}` : `-$${Math.abs(bestPnl)}`}</span>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold text-[var(--text)]">{bestTitle}</h4>
-            <p className="text-[11px] text-[var(--muted)] line-clamp-2 mt-0.5">
+            <h4 className="text-xs font-bold text-[var(--text)] truncate">{bestTitle}</h4>
+            <p className="text-[11px] text-[var(--text-dim)] line-clamp-2 mt-0.5 font-mono-num">
               {bestContent}
             </p>
           </div>
 
-          <div className="text-[10px] font-mono-num text-[var(--muted)] pt-1 flex justify-between border-t border-[var(--win)]/15">
-            <span>By {bestAnalyst}</span>
-            <span className="text-[var(--win)] font-semibold">+{bestDelta} Credibility</span>
+          <div className="text-[10px] font-mono-num text-[var(--muted)] pt-1.5 flex justify-between border-t border-[var(--border)]">
+            <span>Analyst: <strong className="text-[var(--text)]">{bestAnalyst}</strong></span>
+            <span className="text-[var(--win)] font-semibold">+{bestDelta} pts</span>
           </div>
         </div>
 
         {/* Worst Pick */}
-        <div className="p-3.5 rounded-[10px] bg-[var(--loss-bg)] border border-[var(--loss)]/20 space-y-2">
+        <div className="p-3.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--loss-border)] space-y-2">
           <div className="flex items-center justify-between text-xs font-mono-num">
-            <span className="flex items-center gap-1.5 font-bold text-[var(--loss)] uppercase text-[10px]">
+            <span className="flex items-center gap-1.5 font-bold text-[var(--loss)] uppercase text-[10px] tracking-wider">
               <TrendingDown className="w-3.5 h-3.5" />
-              Maximum Drawdown
+              Max Drawdown
             </span>
-            <span className="font-bold text-[var(--loss)]">-${Math.abs(worstPnl)} PnL</span>
+            <span className="font-bold text-[var(--loss)]">{worstPnl >= 0 ? `+$${worstPnl}` : `-$${Math.abs(worstPnl)}`}</span>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold text-[var(--text)]">{worstTitle}</h4>
-            <p className="text-[11px] text-[var(--muted)] line-clamp-2 mt-0.5">
+            <h4 className="text-xs font-bold text-[var(--text)] truncate">{worstTitle}</h4>
+            <p className="text-[11px] text-[var(--text-dim)] line-clamp-2 mt-0.5 font-mono-num">
               {worstContent}
             </p>
           </div>
 
-          <div className="text-[10px] font-mono-num text-[var(--muted)] pt-1 flex justify-between border-t border-[var(--loss)]/15">
-            <span>By {worstAnalyst}</span>
-            <span className="text-[var(--loss)] font-semibold">{worstDelta} Credibility</span>
+          <div className="text-[10px] font-mono-num text-[var(--muted)] pt-1.5 flex justify-between border-t border-[var(--border)]">
+            <span>Analyst: <strong className="text-[var(--text)]">{worstAnalyst}</strong></span>
+            <span className="text-[var(--loss)] font-semibold">{worstDelta} pts</span>
           </div>
         </div>
       </div>
 
       <div className="text-[11px] text-[var(--muted)] pt-3 border-t border-[var(--border)] font-mono-num flex justify-between">
-        <span>Simulated PnL, not cash</span>
-        <span>{bestPick && worstPick ? "From current records" : "Partial sample"}</span>
+        <span>Variance spread: ${Math.abs(bestPnl - worstPnl).toLocaleString()}</span>
+        <span className="text-[var(--text-dim)]">Verified outcomes</span>
       </div>
     </BentoCard>
   );

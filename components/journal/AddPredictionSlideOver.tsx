@@ -615,8 +615,8 @@ export function AddPredictionSlideOver({
                                 onClick={() => setSelectedFixture(f)}
                                 className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 min-h-[56px] flex items-center justify-between gap-2.5 ${
                                   isSelected
-                                    ? "bg-[var(--accent-violet)]/15 border-[var(--accent-violet)] text-[var(--text)] shadow-[0_0_12px_-2px_var(--accent-violet)]"
-                                    : "bg-[var(--bg)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--text)]"
+                                    ? "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--highlight)] shadow-[0_0_12px_-2px_var(--accent)]"
+                                    : "bg-[var(--surface-subtle)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--text)]"
                                 }`}
                               >
                                 {/* Two-line team stack: Home on top, Away on bottom */}
@@ -945,7 +945,7 @@ export function AddPredictionSlideOver({
               <button
                 type="submit"
                 disabled={isSubmitting || !isAnalystValid || (sportType !== "crypto" && !isManualEntry && !selectedFixture)}
-                className="w-full py-3 px-4 rounded-[8px] bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 text-white font-semibold flex items-center justify-center gap-2 transition cursor-pointer min-h-[44px]"
+                className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] hover:bg-[#DCEEFF] disabled:opacity-50 text-[#050B14] font-bold flex items-center justify-center gap-2 transition cursor-pointer min-h-[44px] shadow-md shadow-[var(--accent)]/20"
               >
                 {isSubmitting ? (
                   <>

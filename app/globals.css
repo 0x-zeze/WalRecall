@@ -1,80 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  /* 2026 Liquid Glass Palette — Midnight Black × Deep Navy × Soft Violet × Electric Cyan */
-  --bg: #080B16;
-  --bg-deep: #05070E;
-  --card: rgba(20, 27, 45, 0.65);
-  --card-hover: rgba(26, 35, 58, 0.82);
-  --card-solid: #0D1220;
-  --surface-elevated: #141B2D;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-focus: rgba(85, 201, 237, 0.4);
+  /* Lunetra Financial Brand Identity Design System */
+  --bg: #050B14;
+  --bg-deep: #03070D;
+  --bg-secondary: #09182A;
   
-  --glass-surface-1: rgba(255, 255, 255, 0.035);
-  --glass-surface-2: rgba(255, 255, 255, 0.065);
-  --glass-surface-3: rgba(255, 255, 255, 0.10);
+  --card: rgba(16, 40, 64, 0.70);
+  --card-hover: rgba(20, 48, 76, 0.85);
+  --card-solid: #102840;
+  --surface-elevated: #0E2238;
+  --surface-subtle: #09182A;
   
-  --text: #F1F4FA;
-  --text-dim: #9FAAC2;
-  --muted: #64748B;
+  --border: rgba(114, 191, 255, 0.12);
+  --border-subtle: rgba(114, 191, 255, 0.06);
+  --border-focus: rgba(114, 191, 255, 0.45);
+  --border-hover: rgba(114, 191, 255, 0.28);
   
-  --accent: #55C9ED;
-  --accent-violet: #8B7CFF;
-  --accent-glow: rgba(85, 201, 237, 0.15);
-  --violet-glow: rgba(139, 124, 255, 0.15);
+  --glass-surface-1: rgba(114, 191, 255, 0.03);
+  --glass-surface-2: rgba(114, 191, 255, 0.06);
+  --glass-surface-3: rgba(114, 191, 255, 0.09);
   
-  --win: #74D9B0;
-  --win-bg: rgba(116, 217, 176, 0.12);
-  --loss: #F08D94;
-  --loss-bg: rgba(240, 141, 148, 0.12);
-  --pending: #FBBF24;
-  --pending-bg: rgba(251, 191, 36, 0.12);
+  --text: #F4F7FB;
+  --text-dim: #91A6BC;
+  --muted: #627D98;
+  --highlight: #DCEEFF;
+  
+  --accent: #72BFFF;
+  --accent-secondary: #4BA3E3;
+  --accent-glow: rgba(114, 191, 255, 0.15);
+  --accent-soft: rgba(114, 191, 255, 0.08);
+  
+  --win: #38D9A9;
+  --win-bg: rgba(56, 217, 169, 0.10);
+  --win-border: rgba(56, 217, 169, 0.25);
+  
+  --loss: #FF6B81;
+  --loss-bg: rgba(255, 107, 129, 0.10);
+  --loss-border: rgba(255, 107, 129, 0.25);
+  
+  --pending: #FFD43B;
+  --pending-bg: rgba(255, 212, 59, 0.10);
+  --pending-border: rgba(255, 212, 59, 0.25);
 
-  --font-heading: var(--font-sora), sans-serif;
+  --font-heading: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-ibm-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 html.light {
-  --bg: #F4F6FB;
-  --bg-deep: #EBF0F8;
-  --card: rgba(255, 255, 255, 0.82);
-  --card-hover: rgba(255, 255, 255, 0.95);
+  /* High-end inverted light terminal (Lunetra Ice theme) */
+  --bg: #F4F7FB;
+  --bg-deep: #E8EEF5;
+  --bg-secondary: #DCE6F2;
+  
+  --card: rgba(255, 255, 255, 0.90);
+  --card-hover: #FFFFFF;
   --card-solid: #FFFFFF;
-  --surface-elevated: #F8FAFC;
-  --border: rgba(0, 0, 0, 0.08);
-  --border-subtle: rgba(0, 0, 0, 0.04);
-  --border-focus: rgba(14, 165, 233, 0.4);
+  --surface-elevated: #F8FAFD;
+  --surface-subtle: #EDF3FA;
   
-  --glass-surface-1: rgba(0, 0, 0, 0.02);
-  --glass-surface-2: rgba(0, 0, 0, 0.04);
-  --glass-surface-3: rgba(0, 0, 0, 0.07);
+  --border: rgba(9, 24, 42, 0.10);
+  --border-subtle: rgba(9, 24, 42, 0.05);
+  --border-focus: rgba(2, 132, 199, 0.45);
+  --border-hover: rgba(2, 132, 199, 0.30);
   
-  --text: #0F172A;
-  --text-dim: #475569;
-  --muted: #64748B;
+  --glass-surface-1: rgba(9, 24, 42, 0.02);
+  --glass-surface-2: rgba(9, 24, 42, 0.04);
+  --glass-surface-3: rgba(9, 24, 42, 0.07);
+  
+  --text: #050B14;
+  --text-dim: #334E68;
+  --muted: #627D98;
+  --highlight: #09182A;
   
   --accent: #0284C7;
-  --accent-violet: #6366F1;
+  --accent-secondary: #0369A1;
   --accent-glow: rgba(2, 132, 199, 0.12);
-  --violet-glow: rgba(99, 102, 241, 0.12);
+  --accent-soft: rgba(2, 132, 199, 0.06);
   
-  --win: #059669;
-  --win-bg: rgba(5, 150, 105, 0.10);
-  --loss: #E11D48;
-  --loss-bg: rgba(225, 29, 72, 0.10);
-  --pending: #D97706;
-  --pending-bg: rgba(217, 119, 6, 0.10);
+  --win: #087F5B;
+  --win-bg: rgba(8, 127, 91, 0.08);
+  --win-border: rgba(8, 127, 91, 0.20);
+  
+  --loss: #E03131;
+  --loss-bg: rgba(224, 49, 49, 0.08);
+  --loss-border: rgba(224, 49, 49, 0.20);
+  
+  --pending: #D9480F;
+  --pending-bg: rgba(217, 72, 15, 0.08);
+  --pending-border: rgba(217, 72, 15, 0.20);
 }
 
 body {
   background-color: var(--bg);
   background-image: 
-    radial-gradient(at 10% 10%, rgba(139, 124, 255, 0.06) 0px, transparent 40%),
-    radial-gradient(at 90% 15%, rgba(85, 201, 237, 0.05) 0px, transparent 40%),
-    radial-gradient(at 50% 90%, rgba(139, 124, 255, 0.04) 0px, transparent 50%);
+    radial-gradient(ellipse at 15% 0%, rgba(114, 191, 255, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 10%, rgba(9, 24, 42, 0.90) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 95%, rgba(114, 191, 255, 0.04) 0%, transparent 50%);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
@@ -82,70 +105,44 @@ body {
   margin: 0;
   overflow-x: hidden;
   transition: background-color 0.25s ease, color 0.25s ease;
+  letter-spacing: -0.01em;
 }
 
-h1, h2, h3, .font-heading {
+h1, h2, h3, h4, .font-heading {
   font-family: var(--font-heading);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
+  font-weight: 600;
 }
 
-/* Number display rules */
+/* Number display rules: clean tabular numbers */
 .font-mono-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
-/* Liquid Glass card styling */
-.liquid-glass {
+/* Lunetra Institutional Financial Card styling */
+.liquid-glass, .lunetra-card, .bento-card {
   background: var(--card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   box-shadow: 
-    0 4px 24px -1px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+    0 4px 20px -2px rgba(5, 11, 20, 0.60),
+    inset 0 1px 0 0 rgba(114, 191, 255, 0.08);
+  border-radius: 14px;
   position: relative;
-  transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.liquid-glass:hover {
-  border-color: rgba(139, 124, 255, 0.35);
+.liquid-glass:hover, .lunetra-card:hover, .bento-card:hover {
+  border-color: var(--border-hover);
   box-shadow: 
-    0 12px 36px -4px rgba(0, 0, 0, 0.35),
-    0 0 20px -2px rgba(85, 201, 237, 0.15),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
-}
-
-/* Bento card backwards compatibility */
-.bento-card {
-  background: var(--card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
-  box-shadow: 
-    0 4px 20px -1px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  position: relative;
-  transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.bento-card:hover {
-  border-color: rgba(85, 201, 237, 0.32);
-  box-shadow: 
-    0 10px 30px -4px rgba(0, 0, 0, 0.35),
-    0 0 16px -2px rgba(139, 124, 255, 0.12),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+    0 8px 30px -4px rgba(5, 11, 20, 0.75),
+    0 0 20px -4px rgba(114, 191, 255, 0.12),
+    inset 0 1px 0 0 rgba(114, 191, 255, 0.14);
 }
 
 /* Inner pill radius */
@@ -153,7 +150,7 @@ h1, h2, h3, .font-heading {
   border-radius: 10px;
 }
 
-/* Custom scrollbars */
+/* Custom understated scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -162,9 +159,15 @@ h1, h2, h3, .font-heading {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(114, 191, 255, 0.16);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(85, 201, 237, 0.4);
+  background: rgba(114, 191, 255, 0.35);
+}
+
+/* Interactive focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }

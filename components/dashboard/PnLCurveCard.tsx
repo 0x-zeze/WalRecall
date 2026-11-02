@@ -74,16 +74,16 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
       <div>
         <BentoHeader
           title="Cumulative PnL Performance"
-          subtitle="Simulated P&L from resolved forecasts (backtest + live)"
+          subtitle="Simulated capital trajectory from resolved market forecasts"
           action={
-            <div className="flex items-center gap-1 bg-[var(--glass-surface-1)] p-1 rounded-xl border border-[var(--border)]">
+            <div className="flex items-center gap-1 bg-[#09182A] p-1 rounded-xl border border-[var(--border)]">
               {(["7D", "30D", "90D", "All"] as const).map((tf) => (
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono-num font-medium transition-all duration-250 ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono-num font-medium transition-all ${
                     timeframe === tf
-                      ? "bg-[var(--accent-violet)]/12 text-[var(--accent-violet)] border border-[var(--accent-violet)]/20 shadow-sm"
+                      ? "bg-[#102840] text-[var(--accent)] border border-[var(--accent)]/40 shadow-sm font-semibold"
                       : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -99,10 +99,10 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
             <AnimatedNumber value={Math.abs(displayPnl)} prefix={displayPnl >= 0 ? "+$" : "-$"} />
           </span>
           <span
-            className={`text-xs font-mono-num px-2.5 py-1 rounded-full font-semibold ${
+            className={`text-xs font-mono-num px-2.5 py-1 rounded-full font-semibold border ${
               displayPnl >= 0
-                ? "bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/20 shadow-[0_0_12px_-2px_var(--win)]"
-                : "bg-[var(--loss-bg)] text-[var(--loss)] border border-[var(--loss)]/20"
+                ? "bg-[var(--win-bg)] text-[var(--win)] border-[var(--win)]/30"
+                : "bg-[var(--loss-bg)] text-[var(--loss)] border-[var(--loss)]/30"
             }`}
           >
             {displayPercent >= 0 ? "+" : ""}{displayPercent}% of resolved stake
@@ -110,10 +110,10 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
         </div>
       </div>
 
-      {/* Recharts Area Container or Empty State */}
+      {/* Lunetra Financial Line/Area Chart */}
       <div className="h-[210px] w-full mt-2">
         {!hasSeries ? (
-          <div className="h-full w-full flex items-center justify-center text-sm text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl">
+          <div className="h-full w-full flex items-center justify-center text-xs text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl font-mono-num">
             No resolved forecasts in this window
           </div>
         ) : (
@@ -121,8 +121,8 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="pnlGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#72BFFF" stopOpacity={0.20} />
+                  <stop offset="95%" stopColor="#72BFFF" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -145,7 +145,7 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
                   if (active && payload && payload.length) {
                     const val = Number(payload[0].value) || 0;
                     return (
-                      <div className="p-2.5 rounded-xl bg-[var(--card-solid)] backdrop-blur-xl border border-[var(--border)] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] text-xs font-mono-num space-y-1">
+                      <div className="p-3 rounded-xl bg-[#102840] border border-[var(--border-hover)] shadow-xl text-xs font-mono-num space-y-1">
                         <p className="text-[var(--muted)]">{payload[0].payload.date}</p>
                         <p className={`text-sm font-bold ${val >= 0 ? "text-[var(--accent)]" : "text-[var(--loss)]"}`}>
                           {val >= 0 ? `+$${val.toLocaleString()}` : `-$${Math.abs(val).toLocaleString()}`}
@@ -159,7 +159,7 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
               <Area
                 type="monotone"
                 dataKey="pnl"
-                stroke="var(--accent)"
+                stroke="#72BFFF"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#pnlGlow)"

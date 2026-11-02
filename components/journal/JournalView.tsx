@@ -117,7 +117,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
             placeholder="Search fixtures, picks, forecasters..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[var(--glass-surface-1)] backdrop-blur-sm border border-[var(--border)] text-xs font-mono-num text-[var(--text)] placeholder:text-[var(--muted)]/60 focus:border-[var(--accent-violet)] focus:outline-none transition-all duration-250"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[#09182A] border border-[var(--border)] text-xs font-mono-num text-[var(--text)] placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           />
         </div>
 
@@ -127,7 +127,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as "all" | PredictionCategory)}
-            className="px-2.5 py-2.5 rounded-xl bg-[var(--glass-surface-1)] border border-[var(--border)] text-xs font-mono-num text-[var(--text)] focus:border-[var(--accent-violet)] focus:outline-none transition-all duration-250"
+            className="px-3 py-2.5 rounded-xl bg-[#09182A] border border-[var(--border)] text-xs font-mono-num text-[var(--text)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           >
             <option value="all">All Sectors</option>
             <option value="crypto">Crypto (Sui/BTC/ETH)</option>
@@ -139,7 +139,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | PredictionStatus)}
-            className="px-2.5 py-2.5 rounded-xl bg-[var(--glass-surface-1)] border border-[var(--border)] text-xs font-mono-num text-[var(--text)] focus:border-[var(--accent-violet)] focus:outline-none transition-all duration-250"
+            className="px-3 py-2.5 rounded-xl bg-[#09182A] border border-[var(--border)] text-xs font-mono-num text-[var(--text)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           >
             <option value="all">All Outcomes</option>
             <option value="ACCURATE">Accurate (Wins)</option>
@@ -151,18 +151,18 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
           <button
             onClick={handleCheckResultsNow}
             disabled={isResolving}
-            className="flex items-center gap-1.5 py-2.5 px-3.5 rounded-xl bg-[var(--glass-surface-2)] backdrop-blur-sm border border-[var(--border)] text-[var(--text)] font-mono-num font-semibold text-xs hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-all duration-250 shrink-0 disabled:opacity-50"
+            className="flex items-center gap-1.5 py-2.5 px-3.5 rounded-xl bg-[#09182A] border border-[var(--border)] text-[var(--text)] font-mono-num font-semibold text-xs hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all shrink-0 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isResolving ? "animate-spin text-[var(--accent)]" : ""}`} />
-            <span>{isResolving ? "Checking..." : "Check results now"}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isResolving ? "animate-spin text-[var(--accent)]" : "text-[var(--muted)]"}`} />
+            <span>{isResolving ? "Verifying..." : "Check Results Now"}</span>
           </button>
 
           {/* Log New Prediction CTA */}
           <button
             onClick={() => setIsSlideOverOpen(true)}
-            className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[var(--accent-violet)] to-[var(--accent)] text-white font-mono-num font-bold text-xs hover:shadow-[0_0_20px_-4px_var(--accent-violet)] transition-all duration-250 shrink-0 ml-auto sm:ml-0"
+            className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-[#72BFFF] hover:bg-[#DCEEFF] text-[#050B14] font-mono-num font-bold text-xs shadow-md shadow-[#72BFFF]/20 transition-all shrink-0 ml-auto sm:ml-0"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Add Forecast</span>
           </button>
         </div>
@@ -275,10 +275,10 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
       </div>
 
       {/* Desktop table */}
-      <div className="liquid-glass overflow-hidden hidden md:block">
+      <div className="lunetra-card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono-num border-collapse">
-            <thead className="bg-[var(--glass-surface-1)] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] select-none">
+            <thead className="bg-[#09182A] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] tracking-wider font-semibold select-none">
               <tr>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Sector</th>
@@ -308,8 +308,8 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                     <React.Fragment key={`${pred.id}-${pred.writeStatus}-${idx}`}>
                       <tr
                         onClick={() => toggleRow(pred.id)}
-                        className={`hover:bg-[var(--glass-surface-1)] transition-all duration-250 cursor-pointer ${
-                          isExpanded ? "bg-[var(--glass-surface-1)]" : ""
+                        className={`hover:bg-[#09182A]/70 transition-colors cursor-pointer ${
+                          isExpanded ? "bg-[#09182A]/90 border-l-2 border-l-[var(--accent)]" : ""
                         }`}
                       >
                         {/* Date */}
@@ -322,10 +322,10 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
                               pred.sportType === "crypto"
-                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                ? "bg-[#72BFFF]/10 text-[#72BFFF] border border-[#72BFFF]/30"
                                 : pred.sportType === "soccer"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                ? "bg-[#38D9A9]/10 text-[#38D9A9] border border-[#38D9A9]/30"
+                                : "bg-[#FFD43B]/10 text-[#FFD43B] border border-[#FFD43B]/30"
                             }`}
                           >
                             {pred.sportType}
@@ -359,11 +359,11 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                             ) : null}
                             <span className="truncate">{pred.target}</span>
                             {isHistoricalBacktest ? (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[var(--surface-subtle)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-medium">
                                 Backtest
                               </span>
                             ) : (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#72BFFF]/10 text-[#72BFFF] border border-[#72BFFF]/30 shrink-0 font-medium">
                                 Live
                               </span>
                             )}

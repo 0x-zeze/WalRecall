@@ -1,17 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -25,12 +20,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#080B16",
+  themeColor: "#050B14",
 };
 
 export const metadata: Metadata = {
-  title: "WalRecall — Prediction Journal & Credibility Engine",
-  description: "Prediction journal and forecaster credibility engine powered by Walrus Memory and Sui Mainnet.",
+  title: "WalRecall — Institutional Financial Intelligence & Credibility",
+  description: "Institutional prediction journal and forecaster credibility engine powered by Walrus Memory and Sui Mainnet.",
 };
 
 export default function RootLayout({
@@ -41,9 +36,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sora.variable} ${inter.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-[#080B16] text-[#EDEDED] selection:bg-[#8B7CFF]/30 selection:text-[#55C9ED]">
+      <body className="min-h-full flex flex-col font-sans bg-[#050B14] text-[#F4F7FB] selection:bg-[#72BFFF]/25 selection:text-[#DCEEFF]">
         {children}
       </body>
     </html>

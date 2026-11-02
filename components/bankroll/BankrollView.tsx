@@ -174,27 +174,29 @@ export function BankrollView({
   return (
     <div className="space-y-4">
       {/* Top Header Card with Honest Explanatory Banner */}
-      <div className="liquid-glass p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="lunetra-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Wallet className="w-5 h-5 text-[var(--accent-violet)]" />
-            <h2 className="text-lg font-heading font-bold text-[var(--text)]">Simulated Portfolio & Bankroll</h2>
+            <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
+              <Wallet className="w-4 h-4" />
+            </span>
+            <h2 className="text-lg font-heading font-bold text-[var(--text)] tracking-tight">Simulated Portfolio & Bankroll</h2>
           </div>
-          <p className="text-xs text-[var(--muted)] max-w-3xl leading-relaxed">
-            Bankroll is a capital management simulation. It displays a hypothetical balance derived from simulated stakes
-            and calculates recommended position sizes (Kelly Criterion) based on estimated win probabilities and odds. It is not a wallet or real currency.
+          <p className="text-xs text-[var(--text-dim)] max-w-3xl leading-relaxed">
+            Capital risk simulation engine. Displays hypothetical balances derived from simulated stakes
+            and calculates mathematically optimal position sizing (Kelly Criterion) based on estimated win probabilities and odds.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-[var(--glass-surface-1)] px-4 py-2.5 rounded-xl border border-[var(--border)] font-mono-num text-xs backdrop-blur-sm">
-          <span className="text-[11px] font-medium text-amber-400">Current Capital</span>
+        <div className="flex items-center gap-3 bg-[var(--surface-subtle)] px-4 py-2.5 rounded-xl border border-[var(--border)] font-mono-num text-xs">
+          <span className="text-[11px] font-medium text-amber-400">Capital Sizing Active</span>
           <span className="text-[var(--border)]">|</span>
           <span className="text-[var(--text)] font-semibold">${currentBalance.toLocaleString()}</span>
         </div>
       </div>
 
       {/* STARTING CAPITAL CONFIGURATOR BAR */}
-      <div className="liquid-glass p-4 rounded-2xl border border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="lunetra-card p-4 rounded-2xl border border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="space-y-1">
           <span className="text-xs font-bold text-[var(--text)] font-heading flex items-center gap-1.5">
             <DollarSign className="w-4 h-4 text-[var(--win)]" />
@@ -571,7 +573,7 @@ export function BankrollView({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono-num border-collapse">
-            <thead className="bg-[var(--border-subtle)] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px]">
+            <thead className="bg-[#09182A] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] tracking-wider font-semibold select-none">
               <tr>
                 <th className="py-2.5 px-4">Date</th>
                 <th className="py-2.5 px-4">Description</th>

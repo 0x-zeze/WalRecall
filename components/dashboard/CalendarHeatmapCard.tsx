@@ -66,16 +66,16 @@ export function CalendarHeatmapCard({
   return (
     <BentoCard colSpan="col-span-12" delay={0.4} className="flex flex-col justify-between">
       <BentoHeader
-        title="Daily Resolution Activity Heatmap"
-        subtitle="Resolved forecasts per day over the last 35 days"
+        title="Settlement Activity Ledger"
+        subtitle="Daily resolved forecast density across the rolling 35-day window"
         action={
           <div className="flex items-center gap-2 text-[10px] font-mono-num text-[var(--muted)]">
             <span>0</span>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--border-subtle)]" title="0 resolved" />
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--accent)]/20 border border-[var(--accent)]/40" title="1 resolved" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--surface-subtle)] border border-[var(--border)]" title="0 resolved" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--accent)]/20 border border-[var(--accent)]/30" title="1 resolved" />
               <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--accent)]/50" title="2 resolved" />
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--accent)]" title="3+ resolved" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-[var(--accent)] shadow-[0_0_6px_var(--accent)]" title="3+ resolved" />
             </div>
             <span>3+</span>
           </div>
@@ -84,7 +84,7 @@ export function CalendarHeatmapCard({
 
       <div className="my-2 overflow-x-auto pb-1">
         {totalActivity === 0 ? (
-          <div className="h-16 flex items-center justify-center text-sm text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl">
+          <div className="h-16 flex items-center justify-center text-xs text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl font-mono-num">
             No resolved forecast activity recorded in this 35-day window
           </div>
         ) : (
@@ -92,12 +92,12 @@ export function CalendarHeatmapCard({
             {days.map((day, idx) => {
               const bgClass =
                 day.count === 0
-                  ? "bg-[var(--border-subtle)] text-[var(--muted)]/40 border-transparent"
+                  ? "bg-[var(--surface-subtle)] text-[var(--muted)]/40 border-[var(--border-subtle)]"
                   : day.count === 1
-                  ? "bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/40 font-semibold"
+                  ? "bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)]/30 font-semibold"
                   : day.count === 2
-                  ? "bg-[var(--accent)]/50 text-white border-[var(--accent)]/60 font-semibold"
-                  : "bg-[var(--accent)] text-white border-[var(--accent)] font-bold shadow-[0_0_8px_-1px_var(--accent)]";
+                  ? "bg-[var(--accent)]/40 text-white border-[var(--accent)]/50 font-semibold"
+                  : "bg-[var(--accent)] text-[#050B14] border-[var(--accent)] font-bold shadow-[0_0_8px_-1px_var(--accent)]";
 
               const tooltip =
                 day.count === 0
@@ -110,7 +110,7 @@ export function CalendarHeatmapCard({
                 <div
                   key={idx}
                   title={tooltip}
-                  className={`flex-1 h-9 rounded-[6px] border transition-transform hover:scale-105 cursor-default flex items-center justify-center text-[9px] font-mono-num ${bgClass}`}
+                  className={`flex-1 h-9 rounded-lg border transition-transform hover:scale-105 cursor-default flex items-center justify-center text-[9px] font-mono-num ${bgClass}`}
                 >
                   {day.count > 0 ? day.count : "·"}
                 </div>
@@ -121,8 +121,8 @@ export function CalendarHeatmapCard({
       </div>
 
       <div className="text-[11px] text-[var(--muted)] pt-3 border-t border-[var(--border)] font-mono-num flex justify-between">
-        <span>Active days: {activeDays} of {daysCount}</span>
-        <span>Total resolved: {totalActivity}</span>
+        <span>Active settlement days: {activeDays} of {daysCount}</span>
+        <span className="text-[var(--text-dim)]">Total events: {totalActivity}</span>
       </div>
     </BentoCard>
   );

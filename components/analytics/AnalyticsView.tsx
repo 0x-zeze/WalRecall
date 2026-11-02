@@ -66,24 +66,28 @@ export function AnalyticsView({
   return (
     <div className="space-y-6">
       {/* Top Overview Banner */}
-      <div className="liquid-glass p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="lunetra-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <BarChart3 className="w-5 h-5 text-[var(--accent-violet)]" />
-            <h2 className="text-lg font-heading font-bold text-[var(--text)]">Consensus & Performance Analytics</h2>
+            <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
+              <BarChart3 className="w-4 h-4" />
+            </span>
+            <h2 className="text-lg font-heading font-bold text-[var(--text)] tracking-tight">
+              Market Consensus & Predictive Intel
+            </h2>
           </div>
-          <p className="text-xs text-[var(--muted)] max-w-2xl leading-relaxed">
-            Market consensus matrices and historical performance metrics computed strictly from authentic prediction records.
+          <p className="text-xs text-[var(--text-dim)] max-w-2xl leading-relaxed">
+            Multi-forecaster consensus matrices and historical hit rates calculated strictly from authentic on-chain prediction records.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-[var(--glass-surface-1)] px-4 py-2 rounded-xl border border-[var(--border)] font-mono-num text-xs backdrop-blur-sm">
+        <div className="flex items-center gap-3 bg-[var(--surface-subtle)] px-4 py-2 rounded-xl border border-[var(--border)] font-mono-num text-xs">
           <span className="text-[11px] font-medium text-[var(--win)] flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[var(--win)] animate-pulse" />
-            Calculated from records
+            Calculated from Records
           </span>
           <span className="text-[var(--border)]">|</span>
-          <span className="text-[var(--muted)]">{predictions.length} Total records</span>
+          <span className="text-[var(--muted)]">{predictions.length} Total Records</span>
         </div>
       </div>
 
@@ -91,11 +95,11 @@ export function AnalyticsView({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text)] font-heading flex items-center gap-2">
-              <Users className="w-4 h-4 text-[var(--accent)]" />
-              Active Market Consensus Matrices
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)] font-heading flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Active Consensus Distributions
             </h3>
-            <p className="text-xs text-[var(--muted)]">
+            <p className="text-[11px] text-[var(--muted)]">
               Multi-analyst open markets comparing unweighted 1.0x votes against Walrus memory-weighted consensus.
             </p>
           </div>
@@ -105,7 +109,7 @@ export function AnalyticsView({
         </div>
 
         {marketConsensusList.length === 0 ? (
-          <div className="liquid-glass p-8 text-center text-xs font-mono-num text-[var(--muted)] space-y-2">
+          <div className="lunetra-card p-8 text-center text-xs font-mono-num text-[var(--muted)] space-y-2">
             <AlertCircle className="w-8 h-8 text-[var(--muted)]/50 mx-auto" />
             <p className="font-bold text-sm text-[var(--text)]">No Multi-Analyst Open Markets</p>
             <p className="max-w-md mx-auto text-[var(--muted)]">
@@ -117,11 +121,11 @@ export function AnalyticsView({
             {marketConsensusList.map(({ market, result }) => (
               <div
                 key={market.marketKey}
-                className="liquid-glass p-5 space-y-4 border border-[var(--border)] hover:border-[var(--accent)]/40 transition-colors"
+                className="lunetra-card p-5 space-y-4 border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <span className="text-[10px] font-mono-num text-[var(--accent)] uppercase font-semibold block">
+                    <span className="text-[10px] font-mono-num text-[var(--accent)] uppercase font-semibold block tracking-wider">
                       {market.records[0]?.sportType || "Prediction"} Market
                     </span>
                     <h4 className="text-sm font-bold text-[var(--text)] truncate" title={market.label}>
@@ -129,7 +133,7 @@ export function AnalyticsView({
                     </h4>
                   </div>
                   {result.pivoted && (
-                    <span className="px-2 py-0.5 rounded-full bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/30 text-[10px] font-mono-num font-bold shrink-0">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win-border)] text-[10px] font-mono-num font-bold shrink-0">
                       MEMORY PIVOT
                     </span>
                   )}
@@ -137,8 +141,8 @@ export function AnalyticsView({
 
                 {/* Consensus Comparison Box */}
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono-num">
-                  <div className="p-3 rounded-lg bg-[var(--card)] border border-[var(--border)] space-y-1">
-                    <span className="text-[10px] text-[var(--muted)] uppercase block flex items-center gap-1">
+                  <div className="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] space-y-1">
+                    <span className="text-[10px] text-[var(--muted)] uppercase block flex items-center gap-1 font-medium">
                       <XCircle className="w-3 h-3 text-[var(--loss)]" />
                       Flat 1.0x
                     </span>
@@ -146,26 +150,26 @@ export function AnalyticsView({
                     <div className="text-[10px] text-[var(--muted)]">{result.unweightedConfidence}% Conviction</div>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 space-y-1">
+                  <div className="p-3 rounded-xl bg-[#102840] border border-[var(--border-hover)] space-y-1">
                     <span className="text-[10px] text-[var(--accent)] uppercase font-semibold block flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-[var(--win)]" />
                       Memory-Weighted
                     </span>
-                    <div className="font-bold text-[var(--accent)] truncate">{result.weightedPick}</div>
+                    <div className="font-bold text-[var(--highlight)] truncate">{result.weightedPick}</div>
                     <div className="text-[10px] text-[var(--win)] font-bold">{result.weightedConfidence}% Conviction</div>
                   </div>
                 </div>
 
                 {/* Forecaster Weight Multipliers */}
-                <div className="pt-2 border-t border-[var(--border)] text-[11px] font-mono-num space-y-1">
-                  <span className="text-[10px] text-[var(--muted)] uppercase block">Analyst Opinions & Weights:</span>
+                <div className="pt-2 border-t border-[var(--border)] text-[11px] font-mono-num space-y-1.5">
+                  <span className="text-[10px] text-[var(--muted)] uppercase block font-medium">Analyst Opinions & Weights:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {market.opinions.map((op) => {
                       const weight = weightsMap.get(op.analyst) ?? 1.0;
                       return (
                         <span
                           key={op.analyst}
-                          className="px-2 py-0.5 rounded bg-[var(--glass-surface-1)] border border-[var(--border)] text-[11px]"
+                          className="px-2 py-0.5 rounded-lg bg-[var(--surface-subtle)] border border-[var(--border)] text-[11px]"
                         >
                           <span className="font-semibold text-[var(--text)]">{op.analyst}</span>:{" "}
                           <span className="text-[var(--accent)]">{op.pick}</span>{" "}
@@ -220,7 +224,7 @@ export function AnalyticsView({
                       if (active && payload && payload.length) {
                         const item = payload[0].payload as (typeof leagueData)[0];
                         return (
-                          <div className="p-3 rounded-xl bg-[var(--card-solid)] backdrop-blur-xl border border-[var(--border)] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] text-xs font-mono-num space-y-1">
+                          <div className="p-3 rounded-xl bg-[#102840] border border-[var(--border-hover)] shadow-xl text-xs font-mono-num space-y-1">
                             <p className="font-bold text-[var(--text)] flex items-center gap-1.5">
                               {item.name}
                               {item.lowSample && (
@@ -242,7 +246,7 @@ export function AnalyticsView({
                   />
                   <Bar dataKey="winRate" radius={[0, 4, 4, 0]}>
                     {leagueData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill || "var(--accent)"} />
+                      <Cell key={`cell-${index}`} fill={entry.fill || "#72BFFF"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -255,7 +259,7 @@ export function AnalyticsView({
             {leagueData.map((l) => (
               <span
                 key={l.name}
-                className="text-[10px] font-mono-num px-2 py-0.5 rounded bg-[var(--glass-surface-1)] border border-[var(--border)] text-[var(--muted)] flex items-center gap-1"
+                className="text-[10px] font-mono-num px-2 py-0.5 rounded-lg bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--muted)] flex items-center gap-1"
               >
                 <span className="font-semibold text-[var(--text)]">{l.name}:</span> {l.picks} picks
                 {l.lowSample && <span className="text-amber-400 text-[9px]">(low sample)</span>}
@@ -266,7 +270,7 @@ export function AnalyticsView({
 
         {/* Monthly PnL Trend */}
         <BentoCard colSpan="col-span-12 lg:col-span-5" delay={0.1}>
-          <BentoHeader title="Monthly PnL Trend" subtitle="Net profit & loss aggregated by calendar month" />
+          <BentoHeader title="Monthly PnL Trajectory" subtitle="Net profit & loss aggregated by calendar month" />
 
           <div className="h-64 w-full mt-2">
             {monthlyPnlData.length === 0 ? (
@@ -289,7 +293,7 @@ export function AnalyticsView({
                       if (active && payload && payload.length) {
                         const item = payload[0].payload as (typeof monthlyPnlData)[0];
                         return (
-                          <div className="p-3 rounded-xl bg-[var(--card-solid)] backdrop-blur-xl border border-[var(--border)] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] text-xs font-mono-num space-y-1">
+                          <div className="p-3 rounded-xl bg-[#102840] border border-[var(--border-hover)] shadow-xl text-xs font-mono-num space-y-1">
                             <p className="font-bold text-[var(--text)]">{item.month}</p>
                             <p className={`font-semibold ${item.pnl >= 0 ? "text-[var(--win)]" : "text-[var(--loss)]"}`}>
                               Net P&L: {item.pnl >= 0 ? `+$${item.pnl}` : `-$${Math.abs(item.pnl)}`}
@@ -306,7 +310,7 @@ export function AnalyticsView({
                       <Cell
                         key={`cell-${index}`}
                         fill={entry.pnl >= 0 ? "var(--win)" : "var(--loss)"}
-                        opacity={0.85}
+                        opacity={0.88}
                       />
                     ))}
                   </Bar>
@@ -339,7 +343,7 @@ export function AnalyticsView({
                     <strong className="text-[var(--text)]">{tier.hitRate}%</strong> ({tier.count} picks)
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-[var(--border-subtle)] overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-[var(--surface-subtle)] overflow-hidden">
                   <div
                     className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(0, tier.hitRate))}%` }}
@@ -353,7 +357,7 @@ export function AnalyticsView({
         {/* Confidence Level Hit Rate */}
         <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.2}>
           <BentoHeader
-            title="Performance by Confidence Level"
+            title="Performance by Confidence Rating"
             subtitle="Hit rate and average PnL across analyst star ratings (1 to 5)"
           />
 
@@ -361,7 +365,7 @@ export function AnalyticsView({
             {confidenceData.map((tier) => (
               <div
                 key={tier.level}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--glass-surface-1)] border border-[var(--border)] font-mono-num text-xs"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] font-mono-num text-xs"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-[var(--text)]">{tier.level}</span>
