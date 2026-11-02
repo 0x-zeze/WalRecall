@@ -480,8 +480,11 @@ export async function getTatumCryptoRate(
   const timeoutId = setTimeout(() => controller.abort(), 6000);
 
   try {
+    const cleanSymbol = symbol.trim().toUpperCase();
+    const ticker = cleanSymbol === "BITCOIN" ? "BTC" : cleanSymbol === "ETHEREUM" ? "ETH" : cleanSymbol;
+
     const res = await fetch(
-      `https://api.tatum.io/v3/tatum/rate/${symbol.toUpperCase()}?basePair=${basePair}`,
+      `https://api.tatum.io/v3/tatum/rate/${ticker}?basePair=${basePair}`,
       {
         headers: {
           "x-api-key": tatumApiKey,

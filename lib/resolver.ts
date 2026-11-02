@@ -294,7 +294,8 @@ export async function resolveCryptoPrediction(
   let method = "tatum_spot_within_grace";
   let oracleFallbackUsed = false;
 
-  const tatumRate = await getTatumCryptoRate(symbol.toUpperCase(), "USD");
+  const ticker = symbol === "bitcoin" ? "BTC" : symbol === "ethereum" ? "ETH" : "SUI";
+  const tatumRate = await getTatumCryptoRate(ticker, "USD");
   if (tatumRate.ok && typeof tatumRate.rate === "number") {
     price = tatumRate.rate;
     source = tatumRate.source || "tatum_data_api";
