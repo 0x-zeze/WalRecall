@@ -39,10 +39,6 @@ export function DashboardView({
   const pending = openList.length;
   const winRate = resolved.length > 0 ? (wins / resolved.length) * 100 : 0;
 
-  const totalPnl = resolved.reduce((acc, p) => acc + (p.pnl || 0), 0);
-  const totalStake = resolved.reduce((acc, p) => acc + (p.stake || 0), 0);
-  const totalPnlPercent = totalStake > 0 ? Number(((totalPnl / totalStake) * 100).toFixed(1)) : 0;
-
   const recent10: ("W" | "L")[] = resolved
     .slice()
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -63,7 +59,7 @@ export function DashboardView({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-12 gap-4">
-        <PnLCurveCard records={predictions} currentPnl={totalPnl} totalPnlPercent={totalPnlPercent} />
+        <PnLCurveCard records={predictions} />
         <WinRateRingCard
           winRate={Number(winRate.toFixed(1))}
           wins={wins}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -20,6 +20,12 @@ interface PnLCurveCardProps {
   totalPnlPercent?: number;
 }
 
+const TIMEFRAME_DAYS: Record<string, number> = {
+  "7D": 7,
+  "30D": 30,
+  "90D": 90,
+};
+
 export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLCurveCardProps) {
   const [timeframe, setTimeframe] = useState<"7D" | "30D" | "90D" | "All">("30D");
 
@@ -29,14 +35,33 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
   // The main stat matches the last point of the selected window series, or 0 if empty
   const displayPnl = hasSeries ? series[series.length - 1].pnl : (currentPnl ?? 0);
 
-  // Compute resolved stake percentage for this window
-  const resolved = records.filter((r) => r.outcome === "ACCURATE" || r.outcome === "FAILED");
-  const totalStake = resolved.reduce((acc, r) => acc + (r.stake || 0), 0);
+  // Compute resolved stake percentage specifically for the selected timeframe window
+  const resolved = useMemo(
+    () => records.filter((r) => r.outcome === "ACCURATE" || r.outcome === "FAILED"),
+    [records]
+  );
+
+  const windowStake = useMemo(() => {
+    if (timeframe === "All") {
+      return resolved.reduce((acc, r) => acc + (r.stake || 0), 0);
+    }
+    const days = TIMEFRAME_DAYS[timeframe] || 30;
+    const windowMs = days * 24 * 60 * 60 * 1000;
+    const sorted = resolved.slice().sort((a, b) => a.timestamp - b.timestamp);
+    if (sorted.length === 0) return 0;
+    const latestTs = sorted[sorted.length - 1].timestamp;
+    const cutoff = latestTs - windowMs;
+    return sorted
+      .filter((r) => r.timestamp >= cutoff && r.timestamp <= latestTs)
+      .reduce((acc, r) => acc + (r.stake || 0), 0);
+  }, [resolved, timeframe]);
+
+  // Compute percentage strictly from the active window's PnL and stake
   const displayPercent =
-    totalPnlPercent !== undefined
+    timeframe === "All" && totalPnlPercent !== undefined
       ? totalPnlPercent
-      : totalStake > 0
-        ? Number(((displayPnl / totalStake) * 100).toFixed(1))
+      : windowStake > 0
+        ? Number(((displayPnl / windowStake) * 100).toFixed(1))
         : 0;
 
   const chartData = series.map((s) => ({
