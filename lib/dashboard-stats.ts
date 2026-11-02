@@ -111,7 +111,7 @@ export interface PnlSeriesPoint {
 export function cumulativePnlSeries(
   records: PredictionRecord[],
   timeframe: "7D" | "30D" | "90D" | "All",
-  now = Date.now()
+  now?: number
 ): PnlSeriesPoint[] {
   const resolved = records
     .filter((r) => r.outcome === "ACCURATE" || r.outcome === "FAILED")
@@ -132,7 +132,10 @@ export function cumulativePnlSeries(
     const windowMs = days * 24 * 60 * 60 * 1000;
     const latestTs = resolved[resolved.length - 1].timestamp;
 
-    const effectiveAnchor = now - windowMs <= latestTs && latestTs <= now ? now : latestTs;
+    const effectiveAnchor =
+      typeof now === "number" && now - windowMs <= latestTs && latestTs <= now
+        ? now
+        : latestTs;
     const cutoff = effectiveAnchor - windowMs;
 
     inWindow = resolved.filter((r) => r.timestamp >= cutoff && r.timestamp <= effectiveAnchor);
