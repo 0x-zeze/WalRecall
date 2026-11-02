@@ -11,58 +11,45 @@ import {
 } from "recharts";
 import { BentoCard, BentoHeader } from "../ui/BentoCard";
 import { AnimatedNumber } from "../ui/AnimatedNumber";
+import type { PredictionRecord } from "../../lib/types";
+import { cumulativePnlSeries, type PnlSeriesPoint } from "../../lib/dashboard-stats";
 
 interface PnLCurveCardProps {
-  currentPnl: number;
-  totalPnlPercent: number;
+  records?: PredictionRecord[];
+  currentPnl?: number;
+  totalPnlPercent?: number;
 }
 
-const PNL_DATA_TIMEFRAMES: Record<string, { date: string; pnl: number }[]> = {
-  "7D": [
-    { date: "Oct 24", pnl: 850 },
-    { date: "Oct 25", pnl: 1450 },
-    { date: "Oct 26", pnl: 1632 },
-    { date: "Oct 27", pnl: 1636 },
-    { date: "Oct 28", pnl: 2216 },
-    { date: "Oct 29", pnl: 2416 },
-    { date: "Oct 30", pnl: 2416 },
-  ],
-  "30D": [
-    { date: "Oct 01", pnl: 0 },
-    { date: "Oct 05", pnl: 340 },
-    { date: "Oct 10", pnl: 680 },
-    { date: "Oct 15", pnl: 894 },
-    { date: "Oct 20", pnl: 1219 },
-    { date: "Oct 25", pnl: 1632 },
-    { date: "Oct 30", pnl: 2416 },
-  ],
-  "90D": [
-    { date: "Aug 01", pnl: -120 },
-    { date: "Aug 20", pnl: 450 },
-    { date: "Sep 10", pnl: 980 },
-    { date: "Sep 30", pnl: 1420 },
-    { date: "Oct 15", pnl: 1890 },
-    { date: "Oct 30", pnl: 2416 },
-  ],
-  All: [
-    { date: "Jul 01", pnl: 0 },
-    { date: "Aug 01", pnl: 410 },
-    { date: "Sep 01", pnl: 1120 },
-    { date: "Oct 01", pnl: 1750 },
-    { date: "Oct 30", pnl: 2416 },
-  ],
-};
-
-export function PnLCurveCard({ currentPnl, totalPnlPercent }: PnLCurveCardProps) {
+export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLCurveCardProps) {
   const [timeframe, setTimeframe] = useState<"7D" | "30D" | "90D" | "All">("30D");
-  const data = PNL_DATA_TIMEFRAMES[timeframe];
+
+  const series: PnlSeriesPoint[] = cumulativePnlSeries(records, timeframe);
+  const hasSeries = series.length > 0;
+
+  // The main stat matches the last point of the selected window series, or 0 if empty
+  const displayPnl = hasSeries ? series[series.length - 1].pnl : (currentPnl ?? 0);
+
+  // Compute resolved stake percentage for this window
+  const resolved = records.filter((r) => r.outcome === "ACCURATE" || r.outcome === "FAILED");
+  const totalStake = resolved.reduce((acc, r) => acc + (r.stake || 0), 0);
+  const displayPercent =
+    totalPnlPercent !== undefined
+      ? totalPnlPercent
+      : totalStake > 0
+        ? Number(((displayPnl / totalStake) * 100).toFixed(1))
+        : 0;
+
+  const chartData = series.map((s) => ({
+    date: s.label,
+    pnl: s.pnl,
+  }));
 
   return (
     <BentoCard colSpan="col-span-12 lg:col-span-8" delay={0.05} className="flex flex-col justify-between">
       <div>
         <BentoHeader
           title="Cumulative PnL Performance"
-          subtitle="Simulated PnL from resolved backtest and live picks"
+          subtitle="Simulated P&L from resolved forecasts (backtest + live)"
           action={
             <div className="flex items-center gap-1 bg-[var(--glass-surface-1)] p-1 rounded-xl border border-[var(--border)]">
               {(["7D", "30D", "90D", "All"] as const).map((tf) => (
@@ -84,64 +71,77 @@ export function PnLCurveCard({ currentPnl, totalPnlPercent }: PnLCurveCardProps)
 
         <div className="flex items-baseline gap-3 mb-4">
           <span className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--text)] font-mono-num">
-            <AnimatedNumber value={Math.abs(currentPnl)} prefix={currentPnl >= 0 ? "+$" : "-$"} />
+            <AnimatedNumber value={Math.abs(displayPnl)} prefix={displayPnl >= 0 ? "+$" : "-$"} />
           </span>
-          <span className="text-xs font-mono-num px-2.5 py-1 rounded-full bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/20 font-semibold shadow-[0_0_12px_-2px_var(--win)]">
-            {totalPnlPercent >= 0 ? "+" : ""}{totalPnlPercent}% of resolved stake
+          <span
+            className={`text-xs font-mono-num px-2.5 py-1 rounded-full font-semibold ${
+              displayPnl >= 0
+                ? "bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/20 shadow-[0_0_12px_-2px_var(--win)]"
+                : "bg-[var(--loss-bg)] text-[var(--loss)] border border-[var(--loss)]/20"
+            }`}
+          >
+            {displayPercent >= 0 ? "+" : ""}{displayPercent}% of resolved stake
           </span>
         </div>
       </div>
 
-      {/* Recharts Area Container */}
+      {/* Recharts Area Container or Empty State */}
       <div className="h-[210px] w-full mt-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="pnlGlow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="date"
-              stroke="var(--muted)"
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              dy={10}
-            />
-            <YAxis
-              stroke="var(--muted)"
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v) => `$${v}`}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="p-2.5 rounded-xl bg-[var(--card-solid)] backdrop-blur-xl border border-[var(--border)] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] text-xs font-mono-num space-y-1">
-                      <p className="text-[var(--muted)]">{payload[0].payload.date}</p>
-                      <p className="text-sm font-bold text-[var(--accent)]">
-                        +${payload[0].value?.toLocaleString()}
-                      </p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="pnl"
-              stroke="var(--accent)"
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#pnlGlow)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {!hasSeries ? (
+          <div className="h-full w-full flex items-center justify-center text-sm text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl">
+            No resolved forecasts in this window
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pnlGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="date"
+                stroke="var(--muted)"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                dy={10}
+              />
+              <YAxis
+                stroke="var(--muted)"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `$${v}`}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const val = Number(payload[0].value) || 0;
+                    return (
+                      <div className="p-2.5 rounded-xl bg-[var(--card-solid)] backdrop-blur-xl border border-[var(--border)] shadow-[0_8px_24px_-4px_rgba(0,0,0,0.4)] text-xs font-mono-num space-y-1">
+                        <p className="text-[var(--muted)]">{payload[0].payload.date}</p>
+                        <p className={`text-sm font-bold ${val >= 0 ? "text-[var(--accent)]" : "text-[var(--loss)]"}`}>
+                          {val >= 0 ? `+$${val.toLocaleString()}` : `-$${Math.abs(val).toLocaleString()}`}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="pnl"
+                stroke="var(--accent)"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#pnlGlow)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </BentoCard>
   );

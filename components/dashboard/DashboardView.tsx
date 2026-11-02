@@ -59,7 +59,7 @@ export function DashboardView({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-12 gap-4">
-        <PnLCurveCard currentPnl={totalPnl} totalPnlPercent={totalPnlPercent} />
+        <PnLCurveCard records={predictions} currentPnl={totalPnl} totalPnlPercent={totalPnlPercent} />
         <WinRateRingCard
           winRate={Number(winRate.toFixed(1))}
           wins={wins}

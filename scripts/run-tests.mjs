@@ -43,6 +43,7 @@ import {
   simulatedBalance,
   isBacktestRecord,
   countLiveVsBacktest,
+  cumulativePnlSeries,
 } from "../lib/dashboard-stats.ts";
 import { settleMarket } from "../lib/sports-resolver.ts";
 import { parseOdds, pnlFromOdds } from "../lib/odds.ts";
@@ -2661,6 +2662,88 @@ async function main() {
         assert.equal(typeof rec.pnl, "number");
         assert.equal(Number.isFinite(rec.pnl), true);
       }
+    });
+  });
+
+  await describe("FASE B: lib/dashboard-stats - cumulativePnlSeries & Real PnL Curve", async () => {
+    const baseNow = 1730500000000; // Fixed timestamp reference
+    const dayMs = 86400 * 1000;
+
+    await it("deret kosong: returns empty array when given no records or only pending records", () => {
+      assert.deepEqual(cumulativePnlSeries([], "All", baseNow), []);
+      assert.deepEqual(
+        cumulativePnlSeries(
+          [
+            { id: "p1", outcome: "PENDING", stake: 100, timestamp: baseNow, pnl: 0 },
+            { id: "p2", outcome: "PENDING", stake: 200, timestamp: baseNow, pnl: 0 },
+          ],
+          "All",
+          baseNow
+        ),
+        []
+      );
+    });
+
+    await it("satu record: produces exactly 1 point with matching pnl and timestamp", () => {
+      const single = [
+        { id: "r1", outcome: "ACCURATE", stake: 100, pnl: 91, timestamp: baseNow - dayMs },
+      ];
+      const series = cumulativePnlSeries(single, "All", baseNow);
+      assert.equal(series.length, 1);
+      assert.equal(series[0].pnl, 91);
+      assert.equal(series[0].ts, baseNow - dayMs);
+      assert.equal(typeof series[0].label, "string");
+    });
+
+    await it("beberapa hari: kumulatif agregasi harian dan titik akhir sama persis dengan jumlah PnL", () => {
+      const records = [
+        { id: "r1", outcome: "ACCURATE", stake: 100, pnl: 100, timestamp: baseNow - 4 * dayMs },
+        { id: "r2", outcome: "ACCURATE", stake: 100, pnl: 150, timestamp: baseNow - 4 * dayMs + 1000 }, // same day
+        { id: "r3", outcome: "FAILED", stake: 100, pnl: -100, timestamp: baseNow - 2 * dayMs },
+        { id: "r4", outcome: "ACCURATE", stake: 100, pnl: 200, timestamp: baseNow - 1 * dayMs },
+      ];
+      const totalPnl = records.reduce((s, r) => s + r.pnl, 0); // 100 + 150 - 100 + 200 = 350
+
+      const series = cumulativePnlSeries(records, "All", baseNow);
+      assert.equal(series.length, 3); // 3 distinct days
+      assert.equal(series[0].pnl, 250); // Day 1: 100 + 150
+      assert.equal(series[1].pnl, 150); // Day 2: 250 - 100
+      assert.equal(series[2].pnl, 350); // Day 3: 150 + 200
+      assert.equal(series[series.length - 1].pnl, totalPnl); // Titik akhir == sum(pnl)
+    });
+
+    await it("jendela 7D memotong dengan benar (records di luar 7D dikecualikan)", () => {
+      const records = [
+        { id: "old1", outcome: "ACCURATE", stake: 100, pnl: 500, timestamp: baseNow - 15 * dayMs }, // 15 days ago
+        { id: "new1", outcome: "ACCURATE", stake: 100, pnl: 80, timestamp: baseNow - 3 * dayMs },
+        { id: "new2", outcome: "FAILED", stake: 100, pnl: -50, timestamp: baseNow - 1 * dayMs },
+      ];
+      const series7D = cumulativePnlSeries(records, "7D", baseNow);
+      assert.equal(series7D.length, 2); // Only new1 and new2
+      assert.equal(series7D[series7D.length - 1].pnl, 30); // 80 - 50 = 30 (not 530)
+    });
+
+    await it("urutan acak tidak mengubah hasil deret (sorting invariant)", () => {
+      const records1 = [
+        { id: "r1", outcome: "ACCURATE", stake: 100, pnl: 100, timestamp: baseNow - 3 * dayMs },
+        { id: "r2", outcome: "FAILED", stake: 100, pnl: -50, timestamp: baseNow - 2 * dayMs },
+        { id: "r3", outcome: "ACCURATE", stake: 100, pnl: 200, timestamp: baseNow - 1 * dayMs },
+      ];
+      const recordsShuffled = [records1[2], records1[0], records1[1]];
+
+      const s1 = cumulativePnlSeries(records1, "All", baseNow);
+      const s2 = cumulativePnlSeries(recordsShuffled, "All", baseNow);
+      assert.deepEqual(s1, s2);
+    });
+
+    await it("record PENDING diabaikan dan tidak mempengaruhi kurva maupun titik akhir", () => {
+      const recordsWithPending = [
+        { id: "r1", outcome: "ACCURATE", stake: 100, pnl: 120, timestamp: baseNow - 2 * dayMs },
+        { id: "pend1", outcome: "PENDING", stake: 500, pnl: 0, timestamp: baseNow - 1 * dayMs },
+        { id: "r2", outcome: "FAILED", stake: 100, pnl: -80, timestamp: baseNow - 1 * dayMs },
+      ];
+      const series = cumulativePnlSeries(recordsWithPending, "All", baseNow);
+      assert.equal(series[series.length - 1].pnl, 40); // 120 - 80 = 40
     });
   });
 
