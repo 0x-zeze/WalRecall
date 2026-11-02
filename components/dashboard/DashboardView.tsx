@@ -79,7 +79,7 @@ export function DashboardView({
         />
         <OpenPredictionsCard predictions={predictions} onViewAll={onNavigateJournal} />
         <BestWorstPickCard bestPick={best} worstPick={worst} />
-        <CalendarHeatmapCard daysCount={35} />
+        <CalendarHeatmapCard records={predictions} daysCount={35} />
       </div>
     </div>
   );
