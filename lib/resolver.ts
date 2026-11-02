@@ -2,6 +2,7 @@ import type { PredictionRecord, PredictionStatus } from "./types";
 import { getTatumCryptoRate, getFallbackCryptoRate } from "./tatum";
 import { saveMemory, getAllMemories } from "./walrus";
 import { settleMarket, fetchEspnGameStatus } from "./sports-resolver";
+import { parseOdds, pnlFromOdds } from "./odds";
 
 export const RESOLUTION_RULES = {
   WIN_HIGH_CONFIDENCE_DELTA: 8,
@@ -56,6 +57,8 @@ export interface ResolutionEvidence {
   eventId?: string;
   finalScore?: string;
   statusName?: string;
+  oddsUsed?: string;
+  oddsFallback?: boolean;
 }
 
 export interface ResolutionResult {
@@ -333,6 +336,7 @@ export async function resolveCryptoPrediction(
   const conditionMet = direction === "above" ? price >= targetPrice : price <= targetPrice;
   const outcome: PredictionStatus = conditionMet ? "ACCURATE" : "FAILED";
   const delta = calculateOutcomeDelta(outcome, record.confidence || 4);
+  const parsedOdds = parseOdds(record.odds);
 
   const evidence: ResolutionEvidence = {
     source,
@@ -341,6 +345,8 @@ export async function resolveCryptoPrediction(
     targetPrice,
     fetchedAt,
     oracleFallbackUsed,
+    oddsUsed: record.odds || "-110",
+    oddsFallback: parsedOdds.fallback,
     details: `${symbol.toUpperCase()} resolved at $${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} (Target: ${direction} $${targetPrice.toLocaleString()}) via ${source} [${method}]`,
   };
 
@@ -518,7 +524,8 @@ export async function resolveDuePredictions(
         }
 
         const delta = calculateOutcomeDelta(marketOutcome, pred.confidence || 4);
-        const pnl = marketOutcome === "ACCURATE" ? Math.round(pred.stake * 0.91) : -pred.stake;
+        const sportsOddsInfo = parseOdds(pred.odds);
+        const pnl = pnlFromOdds(pred.stake, pred.odds, marketOutcome);
 
         const resolvedRecord: Partial<PredictionRecord> & {
           title: string;
@@ -566,6 +573,8 @@ export async function resolveDuePredictions(
               finalScore: `${gameStatus.score.home}-${gameStatus.score.away}`,
               statusName: gameStatus.statusName,
               fetchedAt: new Date(now).toISOString(),
+              oddsUsed: pred.odds || "-110",
+              oddsFallback: sportsOddsInfo.fallback,
               details: `Official final score: ${gameStatus.score.home}-${gameStatus.score.away} reported by ESPN public scoreboard (unofficial).`,
             },
           });
@@ -640,7 +649,7 @@ export async function resolveDuePredictions(
         pick: pred.pick,
         odds: pred.odds,
         stake: pred.stake,
-        pnl: resolution.outcome === "ACCURATE" ? Math.round(pred.stake * 0.9) : -pred.stake,
+        pnl: pnlFromOdds(pred.stake, pred.odds, resolution.outcome),
         outcome: resolution.outcome,
         credibilityDelta: resolution.delta,
         confidence: pred.confidence,

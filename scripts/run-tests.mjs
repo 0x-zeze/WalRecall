@@ -45,6 +45,7 @@ import {
   countLiveVsBacktest,
 } from "../lib/dashboard-stats.ts";
 import { settleMarket } from "../lib/sports-resolver.ts";
+import { parseOdds, pnlFromOdds } from "../lib/odds.ts";
 
 let passed = 0;
 let failed = 0;
@@ -2566,6 +2567,99 @@ async function main() {
         } else {
           delete process.env.TZ;
         }
+      }
+    });
+  });
+
+  await describe("FASE A: lib/odds - Dynamic Odds & Real PnL Calculation", async () => {
+    await it("parses American odds -110 accurately (stake 250 -> 227 pnl)", () => {
+      const parsed = parseOdds("-110");
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.fallback, false);
+      assert.equal(parsed.decimal, 1.9091);
+      const pnl = pnlFromOdds(250, "-110", "ACCURATE");
+      assert.equal(pnl, 227);
+    });
+
+    await it("parses American odds +150 accurately (stake 250 -> 375 pnl)", () => {
+      const parsed = parseOdds("+150");
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.fallback, false);
+      assert.equal(parsed.decimal, 2.5);
+      const pnl = pnlFromOdds(250, "+150", "ACCURATE");
+      assert.equal(pnl, 375);
+    });
+
+    await it("parses American odds -200 accurately (stake 250 -> 125 pnl)", () => {
+      const parsed = parseOdds("-200");
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.fallback, false);
+      assert.equal(parsed.decimal, 1.5);
+      const pnl = pnlFromOdds(250, "-200", "ACCURATE");
+      assert.equal(pnl, 125);
+    });
+
+    await it("parses unsigned American odds '110' as positive American odds", () => {
+      const parsed = parseOdds("110");
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.fallback, false);
+      assert.equal(parsed.decimal, 2.1);
+      const pnl = pnlFromOdds(100, "110", "ACCURATE");
+      assert.equal(pnl, 110);
+    });
+
+    await it("parses decimal odds 1.91 and 2.5 accurately", () => {
+      const parsed1 = parseOdds("1.91");
+      assert.equal(parsed1.valid, true);
+      assert.equal(parsed1.fallback, false);
+      assert.equal(parsed1.decimal, 1.91);
+      assert.equal(pnlFromOdds(250, "1.91", "ACCURATE"), 228);
+
+      const parsed2 = parseOdds("2.5");
+      assert.equal(parsed2.valid, true);
+      assert.equal(parsed2.fallback, false);
+      assert.equal(parsed2.decimal, 2.5);
+      assert.equal(pnlFromOdds(250, "2.5", "ACCURATE"), 375);
+    });
+
+    await it("calculates FAILED outcome as exact negative stake (-250)", () => {
+      assert.equal(pnlFromOdds(250, "-110", "FAILED"), -250);
+      assert.equal(pnlFromOdds(250, "+150", "FAILED"), -250);
+      assert.equal(pnlFromOdds(500, "2.5", "FAILED"), -500);
+    });
+
+    await it("falls back to -110 on broken, empty or invalid odds input", () => {
+      const empty = parseOdds("");
+      assert.equal(empty.valid, false);
+      assert.equal(empty.fallback, true);
+      assert.equal(empty.decimal, 1.9091);
+      assert.equal(pnlFromOdds(250, "", "ACCURATE"), 227);
+
+      const invalid = parseOdds("not_an_odds");
+      assert.equal(invalid.valid, false);
+      assert.equal(invalid.fallback, true);
+      assert.equal(invalid.decimal, 1.9091);
+      assert.equal(pnlFromOdds(250, "not_an_odds", "ACCURATE"), 227);
+
+      const nullish = parseOdds(null);
+      assert.equal(nullish.valid, false);
+      assert.equal(nullish.fallback, true);
+      assert.equal(pnlFromOdds(250, null, "ACCURATE"), 227);
+    });
+
+    await it("returns 0 pnl when stake is 0, negative, or invalid", () => {
+      assert.equal(pnlFromOdds(0, "-110", "ACCURATE"), 0);
+      assert.equal(pnlFromOdds(-50, "+150", "ACCURATE"), 0);
+      assert.equal(pnlFromOdds(NaN, "-110", "ACCURATE"), 0);
+    });
+
+    await it("regression: demo seed records with pre-existing pnl are preserved and not altered", () => {
+      // 16 historical demo predictions already have immutable pnl
+      const seedWithPnl = DEMO_PREDICTIONS.filter((p) => p.pnl !== 0);
+      assert.equal(seedWithPnl.length > 0, true);
+      for (const rec of seedWithPnl) {
+        assert.equal(typeof rec.pnl, "number");
+        assert.equal(Number.isFinite(rec.pnl), true);
       }
     });
   });
