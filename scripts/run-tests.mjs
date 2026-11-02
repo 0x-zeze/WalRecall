@@ -44,6 +44,7 @@ import {
   isBacktestRecord,
   countLiveVsBacktest,
   cumulativePnlSeries,
+  liveOpenPredictions,
 } from "../lib/dashboard-stats.ts";
 import { settleMarket } from "../lib/sports-resolver.ts";
 import { parseOdds, pnlFromOdds } from "../lib/odds.ts";
@@ -2931,6 +2932,41 @@ async function main() {
       ];
       // Starting 10000 + 450 - 200 = 10250
       assert.equal(simulatedBalance(records, 10000), 10250);
+    });
+  });
+
+  await describe("FASE F: lib/dashboard-stats - liveOpenPredictions & LIVE Mode Filtering", async () => {
+    const testRecords = [
+      // 2 historical seed records (rec-13 and rec-14 are backtest pending)
+      { id: "rec-13", outcome: "PENDING", stake: 250, timestamp: 1000 },
+      { id: "rec-14", outcome: "PENDING", stake: 300, timestamp: 1001 },
+      // 1 demo source record
+      { id: "custom-demo", source: "demo", outcome: "PENDING", stake: 150, timestamp: 1002 },
+      // 1 live record (walrus confirmed / live format id)
+      { id: "live-rec-99", outcome: "PENDING", stake: 400, timestamp: 2000 },
+      // 1 resolved record
+      { id: "rec-01", outcome: "ACCURATE", stake: 250, pnl: 227, timestamp: 500 },
+    ];
+
+    await it("liveOpenPredictions: di mode DEMO menyertakan backtest pending", () => {
+      const demoOpen = liveOpenPredictions(testRecords, false);
+      assert.equal(demoOpen.length, 4); // rec-13, rec-14, custom-demo, live-rec-99
+    });
+
+    await it("liveOpenPredictions: di mode LIVE mengecualikan backtest pending", () => {
+      const liveOpen = liveOpenPredictions(testRecords, true);
+      assert.equal(liveOpen.length, 1);
+      assert.equal(liveOpen[0].id, "live-rec-99");
+    });
+
+    await it("activeRisk: backtest pending tidak dihitung di mode LIVE; live pending dihitung", () => {
+      // In LIVE mode: only live-rec-99 with stake 400 counts
+      const liveRisk = activeRisk(testRecords, true);
+      assert.equal(liveRisk, 400);
+
+      // In DEMO mode: 250 + 300 + 150 + 400 = 1100
+      const demoRisk = activeRisk(testRecords, false);
+      assert.equal(demoRisk, 1100);
     });
   });
 

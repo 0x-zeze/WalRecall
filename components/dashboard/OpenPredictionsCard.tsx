@@ -4,17 +4,20 @@ import React from "react";
 import { BentoCard, BentoHeader } from "../ui/BentoCard";
 import { Clock, ArrowRight } from "lucide-react";
 import { PredictionRecord } from "@/lib/types";
+import { liveOpenPredictions, isBacktestRecord } from "@/lib/dashboard-stats";
 
 interface OpenPredictionsCardProps {
   predictions: PredictionRecord[];
   onViewAll?: () => void;
+  isMainnetConnected?: boolean;
 }
 
 export function OpenPredictionsCard({
   predictions,
   onViewAll,
+  isMainnetConnected = false,
 }: OpenPredictionsCardProps) {
-  const pendingPicks = predictions.filter((p) => p.outcome === "PENDING").slice(0, 4);
+  const pendingPicks = liveOpenPredictions(predictions, isMainnetConnected).slice(0, 4);
 
   return (
     <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.3} className="flex flex-col justify-between">
@@ -54,6 +57,11 @@ export function OpenPredictionsCard({
                     <span className="text-[10px] font-mono-num px-1.5 py-0.5 rounded bg-[var(--card)] text-[var(--muted)] border border-[var(--border)]">
                       {pick.odds}
                     </span>
+                    {!isMainnetConnected && isBacktestRecord(pick) && (
+                      <span className="text-[9px] font-mono-num px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 font-medium">
+                        sample
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-[var(--muted)] truncate mt-0.5">{pick.pick}</p>
                 </div>

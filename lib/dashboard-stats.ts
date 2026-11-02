@@ -49,10 +49,28 @@ export function currentWinStreak(records: PredictionRecord[]): number {
   return streak;
 }
 
-/** Sum of stake on PENDING predictions only. */
-export function activeRisk(records: PredictionRecord[]): number {
-  return records
-    .filter((record) => record.outcome === "PENDING")
+/**
+ * Filters open (PENDING) predictions based on active network connection mode.
+ * - In LIVE mode (isMainnetConnected === true), excludes historical backtest records.
+ * - In DEMO mode (isMainnetConnected === false), retains demo records for display.
+ */
+export function liveOpenPredictions(
+  records: PredictionRecord[],
+  isMainnetConnected = false
+): PredictionRecord[] {
+  return records.filter((record) => {
+    if (record.outcome !== "PENDING") return false;
+    if (isMainnetConnected && isBacktestRecord(record)) return false;
+    return true;
+  });
+}
+
+/** Sum of stake on PENDING predictions only, excluding backtest records in LIVE mode. */
+export function activeRisk(
+  records: PredictionRecord[],
+  isMainnetConnected = false
+): number {
+  return liveOpenPredictions(records, isMainnetConnected)
     .reduce((sum, record) => sum + (record.stake || 0), 0);
 }
 

@@ -17,22 +17,26 @@ import {
   countLiveVsBacktest,
   currentWinStreak,
   simulatedBalance,
+  liveOpenPredictions,
 } from "@/lib/dashboard-stats";
 
 interface DashboardViewProps {
   predictions: PredictionRecord[];
   suiMetrics?: SuiNodeStatus | null;
   onNavigateJournal: () => void;
+  isMainnetConnected?: boolean;
 }
 
 export function DashboardView({
   predictions,
   onNavigateJournal,
+  isMainnetConnected = false,
 }: DashboardViewProps) {
   const resolved = predictions.filter((p) => p.outcome !== "PENDING");
   const wins = resolved.filter((p) => p.outcome === "ACCURATE").length;
   const losses = resolved.filter((p) => p.outcome === "FAILED").length;
-  const pending = predictions.filter((p) => p.outcome === "PENDING").length;
+  const openList = liveOpenPredictions(predictions, isMainnetConnected);
+  const pending = openList.length;
   const winRate = resolved.length > 0 ? (wins / resolved.length) * 100 : 0;
 
   const totalPnl = resolved.reduce((acc, p) => acc + (p.pnl || 0), 0);
@@ -74,10 +78,14 @@ export function DashboardView({
           balance={balance}
           startingBalance={SIMULATED_STARTING_BANKROLL}
           monthlyPnlPercent={pnlPercent}
-          activeRisk={activeRisk(predictions)}
+          activeRisk={activeRisk(predictions, isMainnetConnected)}
           avgStakePercent={avgStakeOfBankrollPercent(predictions)}
         />
-        <OpenPredictionsCard predictions={predictions} onViewAll={onNavigateJournal} />
+        <OpenPredictionsCard
+          predictions={predictions}
+          onViewAll={onNavigateJournal}
+          isMainnetConnected={isMainnetConnected}
+        />
         <BestWorstPickCard bestPick={best} worstPick={worst} />
         <CalendarHeatmapCard records={predictions} daysCount={35} />
       </div>

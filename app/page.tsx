@@ -227,6 +227,7 @@ export default function Home() {
             <DashboardView
               predictions={predictions}
               onNavigateJournal={() => setActiveTab("journal")}
+              isMainnetConnected={isMainnetConnected}
             />
           )}
 
