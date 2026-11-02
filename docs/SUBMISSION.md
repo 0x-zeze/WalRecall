@@ -6,6 +6,9 @@ Submission materials and readiness verification for **Tatum x Walrus Hackathon (
 
 ## 1. Submission URLs & Assets
 
+### Naming Note
+WalRecall was originally known as AlphaRecall during early prototyping. The on-chain memory format `ALPHARECALL_V1` (legacy format name, kept for compatibility) and Walrus namespace `alpharecall` are preserved so existing mainnet blobs remain verified and recallable.
+
 | Item | Value / Status | Verification Note |
 |---|---|---|
 | **Live Application URL** | [https://walrecall.vercel.app](https://walrecall.vercel.app) | Verified live on Vercel production |

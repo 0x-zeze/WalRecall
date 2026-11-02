@@ -216,8 +216,11 @@ Under **Settings** -> **Secrets and variables** -> **Actions**:
 
 ## Project Structure
 
+### Naming Note
+WalRecall was originally developed under the working name AlphaRecall during early prototyping. The on-chain storage format identifier `ALPHARECALL_V1` and the Walrus Memory namespace `alpharecall` are deliberately preserved across the codebase and configuration. This ensures that the 16 verified Sui mainnet seed memories and all in-flight live forecasts remain fully decodable and queryable without data loss.
+
 ```text
-alpharecall/
+walrecall/
 ├── app/                      # Next.js App Router pages and API routes
 │   ├── api/memories/         # Forecast creation and Walrus memory retrieval
 │   ├── api/resolve/          # Automated settlement engine (cron protected)

@@ -21,7 +21,7 @@ const serverUrl = process.env.MEMWAL_SERVER_URL || "https://relayer.memory.walru
 const namespace = process.env.MEMWAL_NAMESPACE || "alpharecall";
 
 console.log("\n========================================================");
-console.log("  ALPHARECALL - WALRUS MEMORY MAINNET SEEDER");
+console.log("  WALRECALL - WALRUS MEMORY MAINNET SEEDER");
 console.log("========================================================\n");
 
 if (!key || !accountId) {

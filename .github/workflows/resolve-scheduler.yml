@@ -1,4 +1,4 @@
-name: AlphaRecall Resolver Scheduler
+name: WalRecall Resolver Scheduler
 
 "on":
   schedule:

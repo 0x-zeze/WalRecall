@@ -2414,6 +2414,69 @@ async function main() {
     });
   });
 
+  await describe("components/theme/theme-storage - Key Migration Suite", async () => {
+    const {
+      migrateThemeKey,
+      NEW_THEME_STORAGE_KEY,
+      OLD_THEME_STORAGE_KEY,
+    } = await import("../components/theme/theme-storage.ts");
+
+    await it("returns null if storage is not provided or empty", () => {
+      assert.equal(migrateThemeKey(null), null);
+      assert.equal(migrateThemeKey(undefined), null);
+
+      const store = new Map();
+      const mockStorage = {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, v),
+        removeItem: (k) => store.delete(k),
+      };
+      assert.equal(migrateThemeKey(mockStorage), null);
+    });
+
+    await it("reads modern walrecall-theme directly when already set", () => {
+      const store = new Map();
+      store.set(NEW_THEME_STORAGE_KEY, "light");
+      store.set(OLD_THEME_STORAGE_KEY, "dark"); // Should ignore legacy
+
+      const mockStorage = {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, v),
+        removeItem: (k) => store.delete(k),
+      };
+
+      const result = migrateThemeKey(mockStorage);
+      assert.equal(result, "light");
+      assert.equal(store.get(NEW_THEME_STORAGE_KEY), "light");
+      assert.equal(store.get(OLD_THEME_STORAGE_KEY), "dark"); // untouched
+    });
+
+    await it("migrates legacy alpharecall-theme: copies value to walrecall-theme and removes legacy key", () => {
+      const store = new Map();
+      store.set(OLD_THEME_STORAGE_KEY, "light");
+
+      const mockStorage = {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, v),
+        removeItem: (k) => store.delete(k),
+      };
+
+      const result = migrateThemeKey(mockStorage);
+      assert.equal(result, "light");
+      assert.equal(store.get(NEW_THEME_STORAGE_KEY), "light");
+      assert.equal(store.has(OLD_THEME_STORAGE_KEY), false);
+    });
+
+    await it("handles restricted storage throw gracefully without crashing", () => {
+      const faultyStorage = {
+        getItem: () => {
+          throw new Error("QuotaExceeded / SecurityError");
+        },
+      };
+      assert.equal(migrateThemeKey(faultyStorage), null);
+    });
+  });
+
   console.log("\n=================================================");
   console.log(`  FINAL RESULTS: ${passed} PASSED | ${failed} FAILED`);
   console.log("=================================================\n");

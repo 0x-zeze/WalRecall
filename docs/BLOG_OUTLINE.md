@@ -14,7 +14,7 @@
 ## 2. Architecture: Walrus Memory Meets Tatum Gateway
 - **Walrus Memory (`@mysten-incubation/memwal`):**
   - Why decentralized memory matters: censorship-resistant audit trail.
-  - The `ALPHARECALL_V1` memory payload format: strict backward compatibility, explicit delta, and embedded evidence.
+  - The `ALPHARECALL_V1` memory payload format (legacy format name, kept for compatibility): strict backward compatibility, explicit delta, and embedded evidence.
   - 16 confirmed baseline blobs already live on Walrus Mainnet.
 - **Tatum Integration:**
   - **Sui gRPC Gateway (`sui-mainnet-grpc.gateway.tatum.io:443`):** Sub-second retrieval of Sui checkpoint sequence and digest over HTTP/2 TLS to anchor creation time.

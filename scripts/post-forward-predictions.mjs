@@ -84,7 +84,7 @@ const sampleForecasts = [
 
 async function main() {
   console.log("\n========================================================");
-  console.log("  ALPHARECALL - FORWARD CRYPTO FORECAST GENERATOR");
+  console.log("  WALRECALL - FORWARD CRYPTO FORECAST GENERATOR");
   console.log("========================================================");
   console.log(`• Target API Endpoint : ${baseUrl}/api/memories`);
   console.log(`• Base Horizon Target : ${daysAhead} days ahead\n`);

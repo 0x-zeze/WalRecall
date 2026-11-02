@@ -1,8 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "dark" | "light";
+import {
+  type Theme,
+  NEW_THEME_STORAGE_KEY,
+  migrateThemeKey,
+} from "./theme-storage";
 
 interface ThemeContextType {
   theme: Theme;
@@ -18,10 +21,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    // Sync theme with DOM and localStorage safely without synchronous initial render thrashing
-    const saved = localStorage.getItem("alpharecall-theme") as Theme | null;
-    if (saved === "light" || saved === "dark") {
-      document.documentElement.classList.toggle("light", saved === "light");
+    // Sync theme with DOM and localStorage safely with legacy key migration
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const saved = migrateThemeKey(window.localStorage);
+        if (saved === "light" || saved === "dark") {
+          document.documentElement.classList.toggle("light", saved === "light");
+        }
+      }
+    } catch {
+      // Ignore storage errors in restricted contexts
     }
   }, []);
 
@@ -29,7 +38,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     try {
-      localStorage.setItem("alpharecall-theme", next);
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(NEW_THEME_STORAGE_KEY, next);
+      }
     } catch {
       // Ignore storage errors in restricted contexts
     }
@@ -46,3 +57,4 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
+export type { Theme };
