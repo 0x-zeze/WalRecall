@@ -54,6 +54,7 @@ import {
   computeConfidenceAnalytics,
   computeMonthlyPnlAnalytics,
 } from "../lib/analytics.ts";
+import { laplaceWinProbability, calculateKelly } from "../lib/bankroll.ts";
 
 let passed = 0;
 let failed = 0;
@@ -2874,6 +2875,62 @@ async function main() {
       const monthly = computeMonthlyPnlAnalytics(records);
       assert.equal(monthly.length, 1);
       assert.equal(monthly[0].pnl, 150); // 100 - 100 + 150
+    });
+  });
+
+  await describe("FASE E: lib/bankroll - Honest Bankroll & Laplace Kelly Stake Sizing", async () => {
+    await it("laplaceWinProbability: smoothing (wins+1)/(n+2) dan flag low sample (n<5)", () => {
+      // 0 wins, 0 losses -> (0+1)/(0+2) = 50%
+      const empty = laplaceWinProbability(0, 0);
+      assert.equal(empty.winProbPercent, 50.0);
+      assert.equal(empty.n, 0);
+      assert.equal(empty.lowSample, true);
+
+      // 4 wins, 1 loss -> (4+1)/(5+2) = 5/7 ~ 71.4%
+      const fivePicks = laplaceWinProbability(4, 1);
+      assert.equal(fivePicks.winProbPercent, 71.4);
+      assert.equal(fivePicks.n, 5);
+      assert.equal(fivePicks.lowSample, false); // n >= 5
+
+      // 2 wins, 1 loss -> (2+1)/(3+2) = 3/5 = 60.0%
+      const threePicks = laplaceWinProbability(2, 1);
+      assert.equal(threePicks.winProbPercent, 60.0);
+      assert.equal(threePicks.lowSample, true); // 3 < 5
+    });
+
+    await it("calculateKelly: Kelly negatif atau zero edge menghasilkan rekomendasi 0% dengan pesan penjelasan", () => {
+      // At -110 odds (decimal 1.9091), a 40% win probability has negative expected value
+      const noEdge = calculateKelly(10000, 1.9091, 40.0);
+      assert.equal(noEdge.hasEdge, false);
+      assert.equal(noEdge.recommendedPercent, 0);
+      assert.equal(noEdge.recommendedStake, 0);
+      assert.equal(noEdge.explanation, "no edge at these odds");
+    });
+
+    await it("calculateKelly: saldo di Kelly menggunakan saldo saat ini (bukan saldo awal)", () => {
+      // Decimal 2.0 (even money), winProb 60%:
+      // b = 1.0, p = 0.6, q = 0.4
+      // Full Kelly = (1.0 * 0.6 - 0.4) / 1.0 = 0.20 = 20%
+      // Quarter-Kelly = 5.0%
+      // With balance 10,000 -> 500
+      const at10k = calculateKelly(10000, 2.0, 60.0);
+      assert.equal(at10k.recommendedPercent, 5.0);
+      assert.equal(at10k.recommendedStake, 500);
+
+      // With current balance 15,000 (after profit) -> 750 (5% of 15,000)
+      const at15k = calculateKelly(15000, 2.0, 60.0);
+      assert.equal(at15k.recommendedPercent, 5.0);
+      assert.equal(at15k.recommendedStake, 750);
+    });
+
+    await it("kurva dan saldo dari record campuran mencerminkan net PnL nyata", () => {
+      const records = [
+        { id: "r1", outcome: "ACCURATE", pnl: 450, timestamp: 1000 },
+        { id: "r2", outcome: "FAILED", pnl: -200, timestamp: 2000 },
+        { id: "p1", outcome: "PENDING", pnl: 0, stake: 300, timestamp: 3000 },
+      ];
+      // Starting 10000 + 450 - 200 = 10250
+      assert.equal(simulatedBalance(records, 10000), 10250);
     });
   });
 
