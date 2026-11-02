@@ -8,6 +8,10 @@ import { TeamLogo } from "@/components/ui/TeamLogo";
 import { PredictionCategory, SportsFixtureRef, SportsMarketRef } from "@/lib/types";
 import { Fixture, SUPPORTED_LEAGUES } from "@/lib/espn";
 import { formatSportsPickSummary } from "@/lib/fixtures";
+import {
+  getDefaultDeadlineLocalValue,
+  getMinDeadlineLocalValue,
+} from "@/lib/date-utils";
 
 interface AddPredictionSlideOverProps {
   isOpen: boolean;
@@ -66,7 +70,7 @@ export function AddPredictionSlideOver({
 
   // Crypto parameters
   const [deadline, setDeadline] = useState<string>(() => {
-    return new Date(Date.now() + 24 * 3600 * 1000).toISOString().slice(0, 16);
+    return getDefaultDeadlineLocalValue();
   });
   const [direction, setDirection] = useState<"above" | "below">("above");
   const [targetPriceInput, setTargetPriceInput] = useState("2.0");
@@ -314,6 +318,7 @@ export function AddPredictionSlideOver({
       setAnalyst("");
       setSelectedFixture(null);
       setTargetPriceInput("2.0");
+      setDeadline(getDefaultDeadlineLocalValue());
       setReasoning("");
       setFormError(null);
       setIsManualEntry(false);
@@ -482,6 +487,7 @@ export function AddPredictionSlideOver({
                     <input
                       type="datetime-local"
                       required
+                      min={getMinDeadlineLocalValue()}
                       value={deadline}
                       onChange={(e) => setDeadline(e.target.value)}
                       className="w-full px-2.5 py-2 rounded-[6px] bg-[var(--card)] border border-[var(--border)] text-[var(--text)] text-[11px] min-h-[44px]"

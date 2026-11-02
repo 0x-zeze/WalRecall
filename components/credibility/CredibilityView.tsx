@@ -14,6 +14,7 @@ import { BentoCard, BentoHeader } from "../ui/BentoCard";
 import { AnimatedNumber } from "../ui/AnimatedNumber";
 import { PredictionRecord } from "@/lib/types";
 import { getWalrusBlobExplorerUrl } from "@/lib/explorer";
+import { formatLocalDateLabel } from "@/lib/date-utils";
 import {
   computeForecasterStats,
   consensus,
@@ -348,7 +349,7 @@ export function CredibilityView({
                   {m.outcome}
                 </span>
                 <span className="text-[var(--muted)] font-mono-num">
-                  {m.dateStr || "Recent"}
+                  {formatLocalDateLabel(m.timestamp, m.dateStr)}
                 </span>
                 {m.writeStatus === "confirmed" && m.blobId ? (
                   <a

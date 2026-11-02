@@ -2477,6 +2477,99 @@ async function main() {
     });
   });
 
+  await describe("lib/date-utils - Local Timezone & Date Formatting Suite", async () => {
+    const {
+      toDatetimeLocalValue,
+      getDefaultDeadlineLocalValue,
+      getMinDeadlineLocalValue,
+      formatLocalDateLabel,
+    } = await import("../lib/date-utils.ts");
+
+    await it("toDatetimeLocalValue formats date matching local getFullYear/Month/Date/Hours/Minutes components", () => {
+      const testDates = [
+        new Date(2026, 10, 4, 15, 30), // Nov 4, 2026 15:30 local
+        new Date(2026, 0, 1, 9, 5),    // Jan 1, 2026 09:05 local
+        new Date(2026, 11, 31, 23, 59),// Dec 31, 2026 23:59 local
+      ];
+
+      for (const d of testDates) {
+        const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        const actual = toDatetimeLocalValue(d);
+        assert.equal(actual, expected);
+        // Verify format strictly matches YYYY-MM-DDTHH:mm
+        assert.match(actual, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+      }
+    });
+
+    await it("toDatetimeLocalValue accepts unix timestamp in milliseconds", () => {
+      const now = Date.now();
+      const d = new Date(now);
+      const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      assert.equal(toDatetimeLocalValue(now), expected);
+    });
+
+    await it("toDatetimeLocalValue returns empty string for invalid date", () => {
+      assert.equal(toDatetimeLocalValue(new Date(NaN)), "");
+      assert.equal(toDatetimeLocalValue(NaN), "");
+    });
+
+    await it("getDefaultDeadlineLocalValue generates valid YYYY-MM-DDTHH:mm approximately 24h ahead", () => {
+      const val = getDefaultDeadlineLocalValue();
+      assert.match(val, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+
+      const parsedMs = Date.parse(val);
+      const diffHours = (parsedMs - Date.now()) / (3600 * 1000);
+      assert.ok(diffHours >= 23 && diffHours <= 25, `Expected ~24h ahead, got ${diffHours}`);
+    });
+
+    await it("getMinDeadlineLocalValue generates valid YYYY-MM-DDTHH:mm approximately 5 minutes ahead", () => {
+      const val = getMinDeadlineLocalValue();
+      assert.match(val, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+
+      const parsedMs = Date.parse(val);
+      const diffMins = (parsedMs - Date.now()) / (60 * 1000);
+      assert.ok(diffMins >= 4 && diffMins <= 6, `Expected ~5 mins ahead, got ${diffMins}`);
+    });
+
+    await it("formatLocalDateLabel formats valid timestamp using local locale options and falls back gracefully", () => {
+      const ts = new Date(2026, 10, 4, 12, 0).getTime();
+      const expected = new Date(ts).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+
+      assert.equal(formatLocalDateLabel(ts), expected);
+      assert.equal(formatLocalDateLabel(null, "Oct 26, 2024"), "Oct 26, 2024");
+      assert.equal(formatLocalDateLabel(undefined, "Nov 05"), "Nov 05");
+      assert.equal(formatLocalDateLabel(NaN, "Nov 06"), "Nov 06");
+      assert.equal(formatLocalDateLabel(0, "Fallback"), "Fallback");
+      assert.equal(formatLocalDateLabel(null, null), "Recent");
+    });
+
+    await it("toDatetimeLocalValue responds accurately across process.env.TZ changes (Asia/Jakarta and America/New_York)", () => {
+      const origTz = process.env.TZ;
+      const fixedUtcMs = Date.UTC(2026, 10, 4, 12, 0); // 2026-11-04 12:00:00 UTC
+
+      try {
+        // Asia/Jakarta is UTC+7 -> 19:00 local
+        process.env.TZ = "Asia/Jakarta";
+        const jakartaStr = toDatetimeLocalValue(fixedUtcMs);
+        assert.equal(jakartaStr, "2026-11-04T19:00");
+
+        // America/New_York is UTC-5 in Nov (EST) -> 07:00 local
+        process.env.TZ = "America/New_York";
+        const nyStr = toDatetimeLocalValue(fixedUtcMs);
+        assert.equal(nyStr, "2026-11-04T07:00");
+      } finally {
+        if (origTz !== undefined) {
+          process.env.TZ = origTz;
+        } else {
+          delete process.env.TZ;
+        }
+      }
+    });
+  });
+
   console.log("\n=================================================");
   console.log(`  FINAL RESULTS: ${passed} PASSED | ${failed} FAILED`);
   console.log("=================================================\n");

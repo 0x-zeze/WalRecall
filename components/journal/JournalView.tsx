@@ -28,6 +28,7 @@ import { getWalrusBlobExplorerUrl } from "@/lib/explorer";
 import { isBacktestRecord } from "@/lib/dashboard-stats";
 import { CoinLogo } from "@/components/ui/CoinLogo";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { formatLocalDateLabel } from "@/lib/date-utils";
 
 interface JournalViewProps {
   predictions: PredictionRecord[];
@@ -193,7 +194,9 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] text-[var(--muted)] font-mono-num">{pred.dateStr}</div>
+                    <div className="text-[10px] text-[var(--muted)] font-mono-num">
+                      {formatLocalDateLabel(pred.timestamp, pred.dateStr)}
+                    </div>
                     <div className="font-semibold text-sm text-[var(--text)] break-words flex items-center gap-1.5 mt-0.5">
                       {pred.sportType === "crypto" ? (
                         <CoinLogo
@@ -311,7 +314,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                       >
                         {/* Date */}
                         <td className="py-3 px-4 text-[var(--muted)] whitespace-nowrap">
-                          {pred.dateStr}
+                          {formatLocalDateLabel(pred.timestamp, pred.dateStr)}
                         </td>
 
                         {/* Sector Badge */}
