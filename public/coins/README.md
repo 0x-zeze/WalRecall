@@ -10,4 +10,4 @@ The SVG icons in this directory are vendored from [spothq/cryptocurrency-icons](
 ## Assets Included
 - `btc.svg`: Bitcoin color SVG icon (CC0-1.0).
 - `eth.svg`: Ethereum color SVG icon (CC0-1.0).
-- `sui.svg`: SUI coin badge is rendered programmatically via the `CoinLogo.tsx` component as a colored badge with ticker text, avoiding trademark redraws as SUI is not present in the upstream CC0 icon set.
+- `sui.svg`: Sui Network official droplet SVG mark on ocean blue (#2A82E4) background.

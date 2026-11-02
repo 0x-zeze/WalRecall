@@ -8,7 +8,7 @@ export interface CoinLogoProps {
   className?: string;
 }
 
-const SUPPORTED_SVGS = new Set(["btc", "eth"]);
+const SUPPORTED_SVGS = new Set(["btc", "eth", "sui"]);
 
 export function CoinLogo({ symbol, size = 20, className = "" }: CoinLogoProps) {
   const [imgError, setImgError] = useState(false);
@@ -38,7 +38,7 @@ export function CoinLogo({ symbol, size = 20, className = "" }: CoinLogoProps) {
     switch (sym) {
       case "SUI":
         return {
-          bg: "bg-[#4da2ff]",
+          bg: "bg-[#2A82E4]",
           text: "text-white font-bold",
           label: "SUI",
         };
