@@ -2968,6 +2968,128 @@ async function main() {
       const demoRisk = activeRisk(testRecords, false);
       assert.equal(demoRisk, 1100);
     });
+
+    await it("odds boundary tests: decimal 1.01 dan 100 valid, 1.00 dan angka negatif berdesimal invalid", () => {
+      assert.equal(parseOdds("1.01").valid, true);
+      assert.equal(parseOdds("100.0").valid, true);
+      assert.equal(parseOdds("1.00").valid, false); // < 1.01 -> invalid
+      assert.equal(parseOdds("-1.5").valid, false); // negative non-American -> invalid
+    });
+
+    await it("end-to-end consensus offline: 3 analyst pada 1 fixture dengan bobot berbeda membuktikan pivot memori", () => {
+      // Fixture: Arsenal vs Real Madrid
+      // Analyst @Sharp1 (bobot 2.2x dari track record resolved win) -> pick "ARSENAL" (conf 4.0)
+      // Analyst @Novice1 (bobot 0.6x dari track record loss) -> pick "REAL MADRID" (conf 4.5)
+      // Analyst @Novice2 (bobot 0.6x dari track record loss) -> pick "REAL MADRID" (conf 4.5)
+      // Unweighted: REAL MADRID has 2 votes vs 1 -> REAL MADRID leads!
+      // Weighted: ARSENAL = 4.0 * 2.2 = 8.8. REAL MADRID = (4.5 * 0.6) + (4.5 * 0.6) = 5.4.
+      // Weighted result: ARSENAL wins! Memory flips consensus.
+      const fixtureRecord1 = {
+        id: "pred-live-1",
+        analyst: "@Sharp1",
+        pick: "ARSENAL",
+        confidence: 4,
+        outcome: "PENDING",
+        timestamp: 1000,
+        fixture: { provider: "espn", eventId: "99901", home: { name: "Arsenal" }, away: { name: "Real Madrid" } },
+        market: { type: "moneyline", selection: "home" },
+      };
+      const fixtureRecord2 = {
+        id: "pred-live-2",
+        analyst: "@Novice1",
+        pick: "REAL MADRID",
+        confidence: 4.5,
+        outcome: "PENDING",
+        timestamp: 1010,
+        fixture: { provider: "espn", eventId: "99901", home: { name: "Arsenal" }, away: { name: "Real Madrid" } },
+        market: { type: "moneyline", selection: "away" },
+      };
+      const fixtureRecord3 = {
+        id: "pred-live-3",
+        analyst: "@Novice2",
+        pick: "REAL MADRID",
+        confidence: 4.5,
+        outcome: "PENDING",
+        timestamp: 1020,
+        fixture: { provider: "espn", eventId: "99901", home: { name: "Arsenal" }, away: { name: "Real Madrid" } },
+        market: { type: "moneyline", selection: "away" },
+      };
+
+      const groups = groupOpenMarkets([fixtureRecord1, fixtureRecord2, fixtureRecord3]);
+      assert.equal(groups.length, 1);
+      assert.equal(groups[0].opinions.length, 3);
+
+      const weights = new Map([
+        ["@Sharp1", 2.2],
+        ["@Novice1", 0.6],
+        ["@Novice2", 0.6],
+      ]);
+
+      const consensusOut = consensus(groups[0].label, groups[0].opinions, weights);
+      assert.equal(consensusOut.unweightedPick, "REAL MADRID");
+      assert.equal(consensusOut.weightedPick, "ARSENAL");
+      assert.equal(consensusOut.pivoted, true);
+      assert.equal(consensusOut.boostedSharps.includes("@Sharp1"), true);
+      assert.equal(consensusOut.dampenedForecasters.includes("@Novice1"), true);
+    });
+
+    await it("groupOpenMarkets: mengurutkan pasar berdasarkan kickoff atau deadline terdekat", () => {
+      const farMarketA1 = {
+        id: "far-1",
+        analyst: "@A",
+        outcome: "PENDING",
+        timestamp: 1000,
+        deadline: "2026-11-10T12:00:00Z",
+        target: "Far Match",
+      };
+      const farMarketA2 = {
+        id: "far-2",
+        analyst: "@B",
+        outcome: "PENDING",
+        timestamp: 1001,
+        deadline: "2026-11-10T12:00:00Z",
+        target: "Far Match",
+      };
+      const nearMarketB1 = {
+        id: "near-1",
+        analyst: "@A",
+        outcome: "PENDING",
+        timestamp: 1000,
+        deadline: "2026-11-05T12:00:00Z",
+        target: "Near Match",
+      };
+      const nearMarketB2 = {
+        id: "near-2",
+        analyst: "@B",
+        outcome: "PENDING",
+        timestamp: 1001,
+        deadline: "2026-11-05T12:00:00Z",
+        target: "Near Match",
+      };
+
+      const ordered = groupOpenMarkets([farMarketA1, farMarketA2, nearMarketB1, nearMarketB2]);
+      assert.equal(ordered.length, 2);
+      assert.equal(ordered[0].label, "Near Match");
+      assert.equal(ordered[1].label, "Far Match");
+    });
+
+    await it("calculateKelly: batas odds ekstrim (heavy favorite -500 dan underdog +500)", () => {
+      // Underdog +500 (decimal 6.0), winProb 30%:
+      // b = 5.0, p = 0.3, q = 0.7
+      // Full Kelly = (5.0 * 0.3 - 0.7) / 5.0 = 0.8 / 5.0 = 16%
+      // Quarter-Kelly = 4.0%
+      const underdog = calculateKelly(10000, 6.0, 30.0);
+      assert.equal(underdog.hasEdge, true);
+      assert.equal(underdog.recommendedPercent, 4.0);
+      assert.equal(underdog.recommendedStake, 400);
+
+      // Heavy favorite -500 (decimal 1.2), winProb 80%:
+      // b = 0.2, p = 0.8, q = 0.2
+      // edge = 0.2 * 0.8 - 0.2 = -0.04 < 0 -> no edge!
+      const heavyFavNoEdge = calculateKelly(10000, 1.2, 80.0);
+      assert.equal(heavyFavNoEdge.hasEdge, false);
+      assert.equal(heavyFavNoEdge.recommendedStake, 0);
+    });
   });
 
   console.log("\n=================================================");

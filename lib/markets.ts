@@ -119,12 +119,12 @@ export function groupOpenMarkets(
       if (rec.fixture?.kickoff) {
         const ms = new Date(rec.fixture.kickoff).getTime();
         if (!isNaN(ms) && ms < earliestDeadline) earliestDeadline = ms;
-      }
-      if (rec.deadline) {
+      } else if (rec.deadline) {
         const ms = new Date(rec.deadline).getTime();
         if (!isNaN(ms) && ms < earliestDeadline) earliestDeadline = ms;
+      } else if (rec.timestamp && rec.timestamp < earliestDeadline) {
+        earliestDeadline = rec.timestamp;
       }
-      if (rec.timestamp < earliestDeadline) earliestDeadline = rec.timestamp;
     }
 
     const opinions: MarketOpinion[] = uniqueAnalystRecords.map((r) => ({
