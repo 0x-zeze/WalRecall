@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAllMemories, saveMemory, checkWalrusConnection } from "@/lib/walrus";
 import { getLatestSuiCheckpointAnchor } from "@/lib/tatum";
 import { MAX_PREDICTION_HORIZON_MS } from "@/lib/resolver";
-import type { PredictionCategory, SportsFixtureRef, SportsMarketRef } from "@/lib/types";
+import type { PredictionCategory, PredictionRecord, SportsFixtureRef, SportsMarketRef } from "@/lib/types";
 import { getVerifiedFixtureById, formatSportsPickSummary } from "@/lib/fixtures";
 import { SUPPORTED_LEAGUES } from "@/lib/espn";
 import { isSeedAnalystHandle } from "@/lib/demo-data";
@@ -50,6 +50,60 @@ function pruneDedupeCaches(now: number) {
       contentDedupeMap.delete(key);
     }
   });
+}
+
+function sameAnalyst(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+function deadlineMinute(iso: string | undefined): number | null {
+  if (!iso) return null;
+  const ms = Date.parse(iso);
+  if (isNaN(ms)) return null;
+  return Math.floor(ms / 60000);
+}
+
+function storedSportsDuplicate(
+  records: PredictionRecord[],
+  analyst: string,
+  fixture: SportsFixtureRef,
+  market: SportsMarketRef
+): PredictionRecord | null {
+  return (
+    records.find((record) => {
+      if (record.outcome !== "PENDING") return false;
+      if (!sameAnalyst(record.analyst, analyst)) return false;
+      if (!record.fixture || !record.market) return false;
+      if (record.fixture.eventId !== fixture.eventId) return false;
+      if (record.market.type !== market.type) return false;
+      if (record.market.selection !== market.selection) return false;
+      const storedLine = record.market.line ?? null;
+      const incomingLine = market.line ?? null;
+      return storedLine === incomingLine;
+    }) || null
+  );
+}
+
+function storedCryptoDuplicate(
+  records: PredictionRecord[],
+  analyst: string,
+  asset: string,
+  direction: "above" | "below",
+  targetPrice: number,
+  deadlineIso: string | undefined
+): PredictionRecord | null {
+  const minute = deadlineMinute(deadlineIso);
+  return (
+    records.find((record) => {
+      if (record.outcome !== "PENDING") return false;
+      if (record.sportType !== "crypto") return false;
+      if (!sameAnalyst(record.analyst, analyst)) return false;
+      if ((record.asset || "").trim().toUpperCase() !== asset.trim().toUpperCase()) return false;
+      if (record.direction !== direction) return false;
+      if (record.targetPrice !== targetPrice) return false;
+      return deadlineMinute(record.deadline) === minute;
+    }) || null
+  );
 }
 
 function checkRateLimit(ip: string): { allowed: boolean; message?: string } {
@@ -230,8 +284,8 @@ export async function POST(req: Request) {
     let validatedTargetPrice: number | undefined = undefined;
     let verifiedFixture: SportsFixtureRef | undefined = undefined;
     let verifiedMarket: SportsMarketRef | undefined = undefined;
-    let finalTarget = target.trim();
-    let finalPick = pick.trim();
+    let finalTarget = typeof target === "string" ? target.trim() : "";
+    let finalPick = typeof pick === "string" ? pick.trim() : "";
     let finalTitle = typeof title === "string" && title.trim() ? title.trim() : `${finalTarget}: ${finalPick}`;
     const extraTags: string[] = [];
 
@@ -473,6 +527,47 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
+    }
+
+    // 8.3 Stored-record duplicate gate. In-memory cache stays the first layer.
+    // A failed recall must not block the write.
+    try {
+      const stored = await getAllMemories();
+      if (verifiedFixture && verifiedMarket) {
+        const existing = storedSportsDuplicate(stored, analystStr, verifiedFixture, verifiedMarket);
+        if (existing) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "You already have an open forecast for this match and selection.",
+              data: existing,
+            },
+            { status: 409 }
+          );
+        }
+      } else if (categoryVal === "crypto" && typeof validatedTargetPrice === "number") {
+        const existing = storedCryptoDuplicate(
+          stored,
+          analystStr,
+          assetStr,
+          finalDirection,
+          validatedTargetPrice,
+          parsedDeadlineIso
+        );
+        if (existing) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "You already have an open crypto forecast with the same asset, direction, target, and deadline.",
+              data: existing,
+            },
+            { status: 409 }
+          );
+        }
+      }
+    } catch (recallErr: unknown) {
+      const recallMsg = recallErr instanceof Error ? recallErr.message : String(recallErr);
+      console.warn("Stored-record duplicate check skipped because recall failed:", recallMsg);
     }
 
     // 9. Anchor Checkpoint from Tatum / Sui Gateway (Bagian 3)

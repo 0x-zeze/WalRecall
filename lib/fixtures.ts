@@ -11,6 +11,10 @@ export interface FixturesCacheEntry {
 
 // In-memory cache per sport+league+days
 const fixturesCache = new Map<string, FixturesCacheEntry>();
+
+export function clearFixturesCache(): void {
+  fixturesCache.clear();
+}
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes fresh
 const STALE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes stale-on-error limit
 

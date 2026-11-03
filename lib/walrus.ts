@@ -86,6 +86,9 @@ export async function checkWalrusConnection(): Promise<{
  * Falls back to canonical demo data ONLY if Walrus keys are missing or recall fails.
  */
 export async function getAllMemories(): Promise<MemoryRecord[]> {
+  if (customGetAllMemories) {
+    return customGetAllMemories();
+  }
   const client = getMemWalClient();
   if (!client) {
     return dedupePredictions(localDemoCache);
@@ -154,9 +157,15 @@ export type SaveMemoryInput = Partial<MemoryRecord> & {
 };
 
 let customSaveMemory: ((record: SaveMemoryInput) => Promise<MemoryRecord>) | null = null;
+let customGetAllMemories: (() => Promise<MemoryRecord[]>) | null = null;
 
 export function setCustomSaveMemory(fn: ((record: SaveMemoryInput) => Promise<MemoryRecord>) | null) {
   customSaveMemory = fn;
+}
+
+/** Test seam only. Production recall is unchanged when this is unset. */
+export function setCustomGetAllMemories(fn: (() => Promise<MemoryRecord[]>) | null) {
+  customGetAllMemories = fn;
 }
 
 export async function saveMemory(record: SaveMemoryInput): Promise<MemoryRecord> {

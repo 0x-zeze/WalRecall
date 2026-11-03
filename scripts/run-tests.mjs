@@ -29,13 +29,14 @@ import {
 } from "../lib/tatum.ts";
 import { dedupePredictions } from "../lib/dedupe.ts";
 import { DEMO_PREDICTIONS } from "../lib/demo-data.ts";
-import { setCustomSaveMemory } from "../lib/walrus.ts";
+import { setCustomSaveMemory, setCustomGetAllMemories } from "../lib/walrus.ts";
 import * as grpc from "@grpc/grpc-js";
 import { getSuiLedgerPackageDefinition } from "../lib/sui-grpc.ts";
 import {
   parseEspnEvent,
   validateLogoUrl,
 } from "../lib/espn.ts";
+import { clearFixturesCache } from "../lib/fixtures.ts";
 import {
   SIMULATED_STARTING_BANKROLL,
   activeRisk,
@@ -1504,6 +1505,275 @@ async function main() {
       assert.equal(res2.status, 409);
       assert.equal(json2.success, false);
       assert.ok(json2.error?.includes("Duplicate prediction"));
+    });
+
+    function storedBase(overrides) {
+      return {
+        id: overrides.id,
+        category: "prediction",
+        sportType: overrides.sportType,
+        title: overrides.title || overrides.target,
+        content: "",
+        analyst: overrides.analyst,
+        target: overrides.target,
+        pick: overrides.pick,
+        odds: "-110",
+        stake: 100,
+        pnl: 0,
+        outcome: "PENDING",
+        credibilityDelta: 0,
+        confidence: 3,
+        timestamp: 1,
+        dateStr: "Day",
+        writeStatus: "confirmed",
+        blobId: `blob-${overrides.id}`,
+        ...overrides,
+      };
+    }
+
+    function espnFixture(eventId, kickoff) {
+      return async (url) => {
+        if (typeof url === "string" && url.includes("site.api.espn.com")) {
+          return {
+            ok: true,
+            json: async () => ({
+              events: [
+                {
+                  id: eventId,
+                  date: kickoff,
+                  status: { type: { state: "pre" } },
+                  competitions: [
+                    {
+                      competitors: [
+                        { homeAway: "home", team: { id: "1", displayName: "Arsenal", abbreviation: "ARS" } },
+                        { homeAway: "away", team: { id: "2", displayName: "Liverpool", abbreviation: "LIV" } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            }),
+          };
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      };
+    }
+
+    await it("BUG 2: stored sports duplicate is rejected (409) even when the in-memory map is empty", async () => {
+      const kickoff = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+      const stored = storedBase({
+        id: "stored-home",
+        sportType: "soccer",
+        analyst: "@footyanalyst",
+        target: "Arsenal vs Liverpool",
+        pick: "Arsenal to win",
+        fixture: {
+          provider: "espn",
+          eventId: "dup-event-1",
+          sport: "soccer",
+          league: "eng.1",
+          leagueLabel: "Premier League",
+          kickoff,
+          home: { id: "1", name: "Arsenal" },
+          away: { id: "2", name: "Liverpool" },
+        },
+        market: { type: "moneyline", selection: "home" },
+      });
+      setCustomGetAllMemories(async () => [stored]);
+      clearFixturesCache();
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = espnFixture("dup-event-1", kickoff);
+
+      const body = {
+        analyst: "@FootyAnalyst",
+        sportType: "soccer",
+        clientRequestId: `stored-dup-${Math.random()}`,
+        fixture: {
+          provider: "espn",
+          eventId: "dup-event-1",
+          sport: "soccer",
+          league: "eng.1",
+          kickoff,
+          home: { id: "1", name: "Arsenal" },
+          away: { id: "2", name: "Liverpool" },
+        },
+        market: { type: "moneyline", selection: "home" },
+      };
+      const res = await postMemory(
+        new Request("http://localhost:3000/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      );
+      const json = await res.json();
+      assert.equal(res.status, 409);
+      assert.equal(json.success, false);
+      assert.equal(json.error, "You already have an open forecast for this match and selection.");
+      assert.equal(json.data.id, "stored-home");
+
+      setCustomGetAllMemories(null);
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 2: different selection (home vs away) on same match is accepted, and different analyst is accepted", async () => {
+      const kickoff = new Date(Date.now() + 49 * 3600 * 1000).toISOString();
+      const stored = storedBase({
+        id: "stored-home-2",
+        sportType: "soccer",
+        analyst: "@FootyAnalyst",
+        target: "Arsenal vs Liverpool",
+        pick: "Arsenal to win",
+        fixture: {
+          provider: "espn",
+          eventId: "dup-event-2",
+          sport: "soccer",
+          league: "eng.1",
+          leagueLabel: "Premier League",
+          kickoff,
+          home: { id: "1", name: "Arsenal" },
+          away: { id: "2", name: "Liverpool" },
+        },
+        market: { type: "moneyline", selection: "home" },
+      });
+      setCustomGetAllMemories(async () => [stored]);
+      clearFixturesCache();
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = espnFixture("dup-event-2", kickoff);
+      let writes = 0;
+      setCustomSaveMemory(async (record) => {
+        writes += 1;
+        return { ...record, id: record.id || `saved-${writes}`, writeStatus: "local-demo" };
+      });
+
+      const away = await postMemory(
+        new Request("http://localhost:3000/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            analyst: "@FootyAnalyst",
+            sportType: "soccer",
+            clientRequestId: `away-${Math.random()}`,
+            fixture: {
+              provider: "espn",
+              eventId: "dup-event-2",
+              sport: "soccer",
+              league: "eng.1",
+              kickoff,
+              home: { id: "1", name: "Arsenal" },
+              away: { id: "2", name: "Liverpool" },
+            },
+            market: { type: "moneyline", selection: "away" },
+          }),
+        })
+      );
+      assert.equal(away.status, 200);
+
+      const otherAnalyst = await postMemory(
+        new Request("http://localhost:3000/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            analyst: "@OtherFooty",
+            sportType: "soccer",
+            clientRequestId: `other-${Math.random()}`,
+            fixture: {
+              provider: "espn",
+              eventId: "dup-event-2",
+              sport: "soccer",
+              league: "eng.1",
+              kickoff,
+              home: { id: "1", name: "Arsenal" },
+              away: { id: "2", name: "Liverpool" },
+            },
+            market: { type: "moneyline", selection: "home" },
+          }),
+        })
+      );
+      assert.equal(otherAnalyst.status, 200);
+      assert.equal(writes, 2);
+
+      setCustomSaveMemory(null);
+      setCustomGetAllMemories(null);
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 2: stored crypto duplicate is rejected (409), and a failed recall does not block write", async () => {
+      const deadline = new Date(Date.now() + 26 * 3600 * 1000).toISOString();
+      const stored = storedBase({
+        id: "stored-btc",
+        sportType: "crypto",
+        analyst: "@cryptosharp",
+        target: "BTC/USD",
+        pick: "BTC above 90000",
+        asset: "BTC",
+        direction: "above",
+        targetPrice: 90000,
+        deadline,
+      });
+      setCustomGetAllMemories(async () => [stored]);
+      clearFixturesCache();
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => ({ ok: false, json: async () => ({}) });
+
+      const dup = await postMemory(
+        new Request("http://localhost:3000/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "BTC/USD Above 90k",
+            analyst: "@CryptoSharp",
+            sportType: "crypto",
+            target: "BTC/USD",
+            pick: "BTC above 90000",
+            asset: "BTC",
+            direction: "above",
+            targetPrice: 90000,
+            deadline: new Date(Math.floor(Date.parse(deadline) / 60000) * 60000 + 15000).toISOString(),
+            clientRequestId: `crypto-dup-${Math.random()}`,
+          }),
+        })
+      );
+      const dupJson = await dup.json();
+      assert.equal(dup.status, 409);
+      assert.equal(dupJson.data.id, "stored-btc");
+      assert.ok(dupJson.error.includes("open crypto forecast"));
+
+      // Test recall failure does not block write
+      setCustomGetAllMemories(async () => {
+        throw new Error("recall down");
+      });
+      let writes = 0;
+      setCustomSaveMemory(async (record) => {
+        writes += 1;
+        return { ...record, id: "wrote-despite-recall", writeStatus: "local-demo" };
+      });
+      const allowed = await postMemory(
+        new Request("http://localhost:3000/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "ETH/USD Above 4k",
+            analyst: "@CryptoSharp",
+            sportType: "crypto",
+            target: "ETH/USD",
+            pick: "ETH above 4000",
+            asset: "ETH",
+            direction: "above",
+            targetPrice: 4000,
+            deadline,
+            clientRequestId: `crypto-recall-fail-${Math.random()}`,
+          }),
+        })
+      );
+      const allowedJson = await allowed.json();
+      assert.equal(allowed.status, 200);
+      assert.equal(allowedJson.success, true);
+      assert.equal(writes, 1);
+
+      setCustomSaveMemory(null);
+      setCustomGetAllMemories(null);
+      globalThis.fetch = originalFetch;
     });
 
     await it("should reject cron resolution GET /api/resolve when CRON_SECRET is missing or wrong (fail-closed)", async () => {
