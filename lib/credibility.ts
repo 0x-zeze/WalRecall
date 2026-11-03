@@ -166,7 +166,7 @@ export function computeForecasterStats(records: PredictionRecord[]): ForecasterA
         deltaTotal: item.deltaTotal,
         weightMultiplier,
         netPnl: item.pnl,
-        recent: recent.length > 0 ? recent : (["W"] as ("W" | "L")[]),
+        recent,
         categoryBreakdown,
         verifiedBlobs: Array.from(item.blobs),
       };

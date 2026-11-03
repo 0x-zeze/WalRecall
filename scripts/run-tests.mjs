@@ -344,6 +344,81 @@ async function main() {
       assert.equal(res.weightedPick, "UNDERDOG +1.5");
       assert.equal(res.pivoted, true);
     });
+
+    await it("BUG 1: pending-only analyst has an empty recent form, mixed outcomes are newest-first and capped at 5", () => {
+      const pendingOnly = computeForecasterStats([
+        {
+          id: "pending-only",
+          category: "prediction",
+          sportType: "crypto",
+          title: "open",
+          content: "",
+          analyst: "@NoResults",
+          target: "SUI",
+          pick: "above",
+          odds: "-110",
+          stake: 100,
+          pnl: 0,
+          outcome: "PENDING",
+          credibilityDelta: 0,
+          confidence: 3,
+          timestamp: 5000,
+          dateStr: "Day",
+          writeStatus: "local-demo",
+        },
+      ]);
+      assert.equal(pendingOnly.length, 1);
+      assert.deepEqual(pendingOnly[0].recent, []); // Must be empty array, not ["W"]!
+      assert.equal(pendingOnly[0].wins, 0);
+      assert.equal(pendingOnly[0].losses, 0);
+
+      const mixed = [];
+      for (let i = 0; i < 6; i += 1) {
+        mixed.push({
+          id: `mix-${i}`,
+          category: "audit",
+          sportType: "soccer",
+          title: `m${i}`,
+          content: "",
+          analyst: "@FormTest",
+          target: `t${i}`,
+          pick: "home",
+          odds: "-110",
+          stake: 100,
+          pnl: i % 2 === 0 ? 90 : -100,
+          outcome: i % 2 === 0 ? "ACCURATE" : "FAILED",
+          credibilityDelta: i % 2 === 0 ? 6 : -4,
+          confidence: 4,
+          timestamp: 1000 + i,
+          dateStr: "Day",
+          writeStatus: "confirmed",
+        });
+      }
+      mixed.push({
+        id: "mix-pending",
+        category: "prediction",
+        sportType: "soccer",
+        title: "open",
+        content: "",
+        analyst: "@FormTest",
+        target: "open",
+        pick: "away",
+        odds: "-110",
+        stake: 50,
+        pnl: 0,
+        outcome: "PENDING",
+        credibilityDelta: 0,
+        confidence: 3,
+        timestamp: 99999,
+        dateStr: "Day",
+        writeStatus: "local-demo",
+      });
+
+      const form = computeForecasterStats(mixed)[0];
+      // Sorted by timestamp desc: mix-5 (F), mix-4 (A), mix-3 (F), mix-2 (A), mix-1 (F) -> L, W, L, W, L
+      assert.deepEqual(form.recent, ["L", "W", "L", "W", "L"]);
+      assert.equal(form.recent.length, 5);
+    });
   });
 
   // --------------------------------------------------------------------------

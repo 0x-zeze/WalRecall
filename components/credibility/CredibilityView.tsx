@@ -173,20 +173,24 @@ export function CredibilityView({
                 {/* W/L Dots */}
                 <div className="flex items-center justify-between text-xs font-mono-num my-2">
                   <span className="text-[11px] text-[var(--muted)]">Recent Form</span>
-                  <div className="flex items-center gap-1">
-                    {f.recent.map((res, i) => (
-                      <span
-                        key={i}
-                        className={`w-4 h-4 rounded-[4px] text-[9px] font-bold flex items-center justify-center ${
-                          res === "W"
-                            ? "bg-[var(--win-bg)] text-[var(--win)]"
-                            : "bg-[var(--loss-bg)] text-[var(--loss)]"
-                        }`}
-                      >
-                        {res}
-                      </span>
-                    ))}
-                  </div>
+                  {f.recent.length === 0 ? (
+                    <span className="text-[11px] text-[var(--muted)]">No resolved forecasts yet</span>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      {f.recent.map((res, i) => (
+                        <span
+                          key={i}
+                          className={`w-4 h-4 rounded-[4px] text-[9px] font-bold flex items-center justify-center ${
+                            res === "W"
+                              ? "bg-[var(--win-bg)] text-[var(--win)]"
+                              : "bg-[var(--loss-bg)] text-[var(--loss)]"
+                          }`}
+                        >
+                          {res}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-[11px] text-[var(--muted)] font-mono-num pt-1 flex justify-between">
