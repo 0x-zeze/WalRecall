@@ -110,7 +110,7 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
         </div>
       </div>
 
-      {/* Lunetra Financial Line/Area Chart */}
+      {/* Financial Line/Area Chart */}
       <div className="h-[210px] w-full mt-2">
         {!hasSeries ? (
           <div className="h-full w-full flex items-center justify-center text-xs text-[var(--muted)] border border-dashed border-[var(--border)] rounded-xl font-mono-num">

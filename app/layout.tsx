@@ -24,8 +24,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WalRecall — Institutional Financial Intelligence & Credibility",
-  description: "Institutional prediction journal and forecaster credibility engine powered by Walrus Memory and Sui Mainnet.",
+  title: "WalRecall: forecaster credibility memory on Walrus",
+  description: "Prediction journal and forecaster credibility engine storing records and checkpoints in Walrus Memory and Sui.",
 };
 
 export default function RootLayout({

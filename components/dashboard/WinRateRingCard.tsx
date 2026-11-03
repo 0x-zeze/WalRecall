@@ -33,7 +33,7 @@ export function WinRateRingCard({
       />
 
       <div className="flex items-center justify-between my-2">
-        {/* Lunetra Precision Radial Ring */}
+        {/* Precision Radial Ring */}
         <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
             {/* Background Track */}

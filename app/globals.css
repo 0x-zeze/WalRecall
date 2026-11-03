@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Lunetra Financial Brand Identity Design System */
+  /* Financial Terminal Brand Design System */
   --bg: #050B14;
   --bg-deep: #03070D;
   --bg-secondary: #09182A;
@@ -49,7 +49,7 @@
 }
 
 html.light {
-  /* High-end inverted light terminal (Lunetra Ice theme) */
+  /* High-end inverted light terminal (Ice theme) */
   --bg: #F4F7FB;
   --bg-deep: #E8EEF5;
   --bg-secondary: #DCE6F2;
@@ -121,8 +121,8 @@ h1, h2, h3, h4, .font-heading {
   letter-spacing: -0.025em;
 }
 
-/* Lunetra Institutional Financial Card styling */
-.liquid-glass, .lunetra-card, .bento-card {
+/* Financial Card styling */
+.liquid-glass, .fin-card, .bento-card {
   background: var(--card);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -137,7 +137,7 @@ h1, h2, h3, h4, .font-heading {
               box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.liquid-glass:hover, .lunetra-card:hover, .bento-card:hover {
+.liquid-glass:hover, .fin-card:hover, .bento-card:hover {
   border-color: var(--border-hover);
   box-shadow: 
     0 8px 30px -4px rgba(5, 11, 20, 0.75),

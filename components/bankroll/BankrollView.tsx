@@ -56,7 +56,7 @@ export function BankrollView({
       .reduce((sum, r) => sum + (r.pnl || 0), 0);
   }, [predictions]);
 
-  // Current simulated balance derived from custom starting capital + authentic PnL
+  // Current simulated balance derived from custom starting capital + resolved PnL
   const currentBalance = useMemo(() => {
     return simulatedBalance(predictions, startingCapital);
   }, [predictions, startingCapital]);
@@ -174,7 +174,7 @@ export function BankrollView({
   return (
     <div className="space-y-4">
       {/* Top Header Card with Honest Explanatory Banner */}
-      <div className="lunetra-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="fin-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
@@ -196,7 +196,7 @@ export function BankrollView({
       </div>
 
       {/* STARTING CAPITAL CONFIGURATOR BAR */}
-      <div className="lunetra-card p-4 rounded-2xl border border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="fin-card p-4 rounded-2xl border border-[var(--border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="space-y-1">
           <span className="text-xs font-bold text-[var(--text)] font-heading flex items-center gap-1.5">
             <DollarSign className="w-4 h-4 text-[var(--win)]" />

@@ -59,19 +59,19 @@ export function DashboardView({
 
   return (
     <div className="space-y-4">
-      {/* Lunetra Top Institutional Terminal Banner */}
-      <div className="lunetra-card p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Top Overview Banner */}
+      <div className="fin-card p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
               <Shield className="w-4 h-4" />
             </span>
             <h2 className="text-lg font-heading font-bold text-[var(--text)] tracking-tight">
-              Institutional Intelligence Overview
+              Forecaster performance and credibility
             </h2>
           </div>
           <p className="text-xs text-[var(--text-dim)] max-w-2xl leading-relaxed">
-            Autonomous forecaster performance & credibility telemetry anchored to Sui consensus and immutable Walrus blob storage.
+            Forecasts and outcomes stored in Walrus Memory, each with a Sui checkpoint reference.
           </p>
         </div>
 

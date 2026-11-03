@@ -66,7 +66,7 @@ export function AnalyticsView({
   return (
     <div className="space-y-6">
       {/* Top Overview Banner */}
-      <div className="lunetra-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="fin-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-lg bg-[#09182A] border border-[var(--border)] text-[var(--accent)]">
@@ -77,14 +77,16 @@ export function AnalyticsView({
             </h2>
           </div>
           <p className="text-xs text-[var(--text-dim)] max-w-2xl leading-relaxed">
-            Multi-forecaster consensus matrices and historical hit rates calculated strictly from authentic on-chain prediction records.
+            Calculated from the forecast records in the journal (backtest and live).
           </p>
         </div>
 
         <div className="flex items-center gap-3 bg-[var(--surface-subtle)] px-4 py-2 rounded-xl border border-[var(--border)] font-mono-num text-xs">
           <span className="text-[11px] font-medium text-[var(--win)] flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[var(--win)] animate-pulse" />
-            Calculated from Records
+            {isMainnetConnected
+              ? `${predictions.filter((p) => Boolean(p.blobId)).length} on-chain records`
+              : "local demo data"}
           </span>
           <span className="text-[var(--border)]">|</span>
           <span className="text-[var(--muted)]">{predictions.length} Total Records</span>
@@ -109,7 +111,7 @@ export function AnalyticsView({
         </div>
 
         {marketConsensusList.length === 0 ? (
-          <div className="lunetra-card p-8 text-center text-xs font-mono-num text-[var(--muted)] space-y-2">
+          <div className="fin-card p-8 text-center text-xs font-mono-num text-[var(--muted)] space-y-2">
             <AlertCircle className="w-8 h-8 text-[var(--muted)]/50 mx-auto" />
             <p className="font-bold text-sm text-[var(--text)]">No Multi-Analyst Open Markets</p>
             <p className="max-w-md mx-auto text-[var(--muted)]">
@@ -121,7 +123,7 @@ export function AnalyticsView({
             {marketConsensusList.map(({ market, result }) => (
               <div
                 key={market.marketKey}
-                className="lunetra-card p-5 space-y-4 border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
+                className="fin-card p-5 space-y-4 border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

@@ -25,6 +25,7 @@ import {
   getTatumGatewayStatus,
   getSuiChainMetrics,
   getLatestSuiCheckpointAnchor,
+  getTatumCryptoRate,
 } from "../lib/tatum.ts";
 import { dedupePredictions } from "../lib/dedupe.ts";
 import { DEMO_PREDICTIONS } from "../lib/demo-data.ts";
@@ -645,6 +646,92 @@ async function main() {
       const report2 = await resolveDuePredictions([testCand], baseNow);
       assert.equal(report2.resolvedCount, 0);
       assert.equal(report2.skippedCount, 1);
+    });
+
+    await it("should map crypto asset tickers to standardized symbols in resolver and getTatumCryptoRate URL", async () => {
+      process.env.TATUM_API_KEY = "test_key_123";
+      const fetchedUrls = [];
+
+      globalThis.fetch = async (url) => {
+        fetchedUrls.push(String(url));
+        return {
+          ok: true,
+          json: async () => ({ value: "100.0", basePair: "USD" }),
+        };
+      };
+
+      // 1. Test resolveCryptoPrediction calls getTatumCryptoRate for bitcoin -> BTC, ethereum -> ETH, sui -> SUI
+      const testCases = [
+        {
+          id: "pred-ticker-btc",
+          sportType: "crypto",
+          target: "BTC/USDT",
+          pick: "BTC > $50000",
+          outcome: "PENDING",
+          analyst: "@CryptoSharp",
+          stake: 250,
+          confidence: 4,
+          deadline: new Date(baseNow - 60000).toISOString(),
+          direction: "above",
+          targetPrice: 50000,
+          asset: "BTC",
+        },
+        {
+          id: "pred-ticker-eth",
+          sportType: "crypto",
+          target: "ETH/USDT",
+          pick: "ETH > $3000",
+          outcome: "PENDING",
+          analyst: "@CryptoSharp",
+          stake: 250,
+          confidence: 4,
+          deadline: new Date(baseNow - 60000).toISOString(),
+          direction: "above",
+          targetPrice: 3000,
+          asset: "ETH",
+        },
+        {
+          id: "pred-ticker-sui",
+          sportType: "crypto",
+          target: "SUI/USDT",
+          pick: "SUI > $2",
+          outcome: "PENDING",
+          analyst: "@CryptoSharp",
+          stake: 250,
+          confidence: 4,
+          deadline: new Date(baseNow - 60000).toISOString(),
+          direction: "above",
+          targetPrice: 2,
+          asset: "SUI",
+        },
+      ];
+
+      for (const pred of testCases) {
+        const res = await resolveCryptoPrediction(pred, baseNow);
+        assert.equal(res.status, "resolved");
+      }
+
+      assert.equal(fetchedUrls.some((u) => u.includes("/rate/BTC?basePair=USD")), true);
+      assert.equal(fetchedUrls.some((u) => u.includes("/rate/ETH?basePair=USD")), true);
+      assert.equal(fetchedUrls.some((u) => u.includes("/rate/SUI?basePair=USD")), true);
+
+      // 2. Test getTatumCryptoRate directly maps "BITCOIN" and "ETHEREUM" to "BTC" and "ETH" on constructed URL
+      const directUrls = [];
+      globalThis.fetch = async (url) => {
+        directUrls.push(String(url));
+        return {
+          ok: true,
+          json: async () => ({ value: "50000.0", basePair: "USD" }),
+        };
+      };
+
+      await getTatumCryptoRate("BITCOIN", "USD");
+      await getTatumCryptoRate("ETHEREUM", "USD");
+      await getTatumCryptoRate("sui", "USD");
+
+      assert.equal(directUrls[0], "https://api.tatum.io/v3/tatum/rate/BTC?basePair=USD");
+      assert.equal(directUrls[1], "https://api.tatum.io/v3/tatum/rate/ETH?basePair=USD");
+      assert.equal(directUrls[2], "https://api.tatum.io/v3/tatum/rate/SUI?basePair=USD");
     });
 
     globalThis.fetch = originalFetch;

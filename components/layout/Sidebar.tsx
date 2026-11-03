@@ -70,7 +70,7 @@ export function Sidebar({
   const resolvedTatum = tatumStatus ?? null;
   const resolvedSui = suiChainStatus || suiMetrics || null;
 
-  /* ── Lunetra-Inspired Telemetry Mini-Panel ── */
+  /* ── Telemetry Mini-Panel ── */
   const renderTelemetryPanel = () => (
     <div className="space-y-2 pt-3 border-t border-[var(--border)]">
       {/* Tatum Data API */}
@@ -170,7 +170,7 @@ export function Sidebar({
                 }`}
               />
               <span className="text-[9px] text-[var(--muted)] font-mono-num tracking-wider uppercase font-semibold">
-                {isMainnetConnected ? "SUI MAINNET" : "INSTITUTIONAL DEMO"}
+                {isMainnetConnected ? "SUI MAINNET" : "DEMO (local, not on-chain)"}
               </span>
             </div>
           </div>
@@ -257,7 +257,7 @@ export function Sidebar({
         </div>
       )}
 
-      {/* ── Desktop sidebar (Lunetra Financial Terminal) ───────────────────────────────────── */}
+      {/* ── Desktop sidebar ───────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border)] bg-[#050B14]/85 backdrop-blur-2xl p-5 shrink-0 select-none">
         {/* Brand */}
         <div className="flex items-center gap-3 pb-5 mb-4 border-b border-[var(--border)]">
@@ -275,7 +275,7 @@ export function Sidebar({
                 }`}
               />
               <span className="text-[9px] text-[var(--muted)] font-mono-num tracking-wider uppercase font-semibold">
-                {isMainnetConnected ? "Sui Mainnet" : "Financial Terminal"}
+                {isMainnetConnected ? "Sui Mainnet" : "Demo Mode"}
               </span>
             </div>
           </div>
@@ -318,7 +318,7 @@ export function Sidebar({
         <div className="flex items-center justify-between px-1 pt-3 mt-3 border-t border-[var(--border)] text-[11px] font-mono-num">
           <span className="text-[var(--muted)] flex items-center gap-1.5 text-[10px]">
             <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-            Institutional Mode
+            System Status
           </span>
           <button
             onClick={toggleTheme}

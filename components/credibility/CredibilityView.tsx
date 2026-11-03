@@ -76,7 +76,7 @@ export function CredibilityView({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="lunetra-card p-4 sm:p-6 flex flex-col gap-4">
+      <div className="fin-card p-4 sm:p-6 flex flex-col gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Award className="w-5 h-5 text-[var(--accent)] shrink-0" />
@@ -88,7 +88,7 @@ export function CredibilityView({
             </span>
           </div>
           <p className="text-xs text-[var(--text-dim)] leading-relaxed">
-            Credibility weights are dynamically calculated from immutable audit records recalled from Walrus Memory.
+            Credibility weights are computed from resolved forecasts recalled from Walrus Memory (local demo data in demo mode).
             Formula: <span className="font-mono-num font-semibold text-[var(--highlight)] break-all">Weight = max(0.40, min(2.40, 1.0 + delta / 20))</span>.
             <span className="block mt-1 text-[11px] text-[var(--muted)]">
               Historical baseline scores evaluate long-term signal accuracy, while live forecasts dynamically adjust analyst multipliers in real-time.

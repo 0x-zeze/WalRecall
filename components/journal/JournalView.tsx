@@ -275,7 +275,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
       </div>
 
       {/* Desktop table */}
-      <div className="lunetra-card overflow-hidden hidden md:block">
+      <div className="fin-card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono-num border-collapse">
             <thead className="bg-[#09182A] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] tracking-wider font-semibold select-none">

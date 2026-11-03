@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       const saved = await saveMemory(item);
       results.push(saved);
 
-      // Only record authentic on-chain receipts (must have real blobId)
+      // Only record confirmed on-chain receipts (must have real blobId)
       if (saved.writeStatus === "confirmed" && saved.blobId) {
         newReceipts.push({
           predictionId: item.id,
