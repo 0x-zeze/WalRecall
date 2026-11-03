@@ -166,11 +166,11 @@ export function Sidebar({
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isMainnetConnected ? "bg-[var(--win)] shadow-[0_0_6px_var(--win)]" : "bg-[var(--accent)]"
+                  isMainnetConnected ? "bg-[var(--win)]" : "bg-[var(--accent)]"
                 }`}
               />
-              <span className="text-[9px] text-[var(--muted)] font-mono-num tracking-wider uppercase font-semibold">
-                {isMainnetConnected ? "SUI MAINNET" : "DEMO (local, not on-chain)"}
+              <span className="text-[10px] text-[var(--muted)] font-mono-num font-medium">
+                {isMainnetConnected ? "Sui mainnet" : "Demo (local)"}
               </span>
             </div>
           </div>
@@ -271,19 +271,19 @@ export function Sidebar({
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isMainnetConnected ? "bg-[var(--win)] shadow-[0_0_6px_var(--win)]" : "bg-[var(--accent)] shadow-[0_0_6px_var(--accent)]"
+                  isMainnetConnected ? "bg-[var(--win)]" : "bg-[var(--accent)]"
                 }`}
               />
-              <span className="text-[9px] text-[var(--muted)] font-mono-num tracking-wider uppercase font-semibold">
-                {isMainnetConnected ? "Sui Mainnet" : "Demo Mode"}
+              <span className="text-[10px] text-[var(--muted)] font-mono-num font-medium">
+                {isMainnetConnected ? "Sui mainnet" : "Demo mode"}
               </span>
             </div>
           </div>
         </div>
 
         {/* Section Label */}
-        <div className="px-3 pb-2 text-[10px] font-mono-num uppercase tracking-wider text-[var(--muted)] font-semibold">
-          Platform Navigation
+        <div className="px-3 pb-2 text-[11px] font-mono-num text-[var(--muted)] font-medium">
+          Navigation
         </div>
 
         {/* Navigation */}
@@ -295,9 +295,9 @@ export function Sidebar({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors duration-150 ${
                   isActive
-                    ? "bg-[#102840] text-[var(--highlight)] border border-[var(--accent)]/40 shadow-[0_2px_12px_rgba(5,11,20,0.6)]"
+                    ? "bg-[#102840] text-[var(--highlight)] border border-[var(--accent)]/40 shadow-sm"
                     : "text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)] border border-transparent"
                 }`}
               >

@@ -278,7 +278,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
       <div className="fin-card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono-num border-collapse">
-            <thead className="bg-[#09182A] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] tracking-wider font-semibold select-none">
+            <thead className="bg-[#09182A] text-[var(--muted)] border-b border-[var(--border)] text-[11px] font-medium select-none">
               <tr>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Sector</th>
@@ -287,7 +287,7 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                 <th className="py-3 px-4 text-center">Odds</th>
                 <th className="py-3 px-4 text-right">Stake</th>
                 <th className="py-3 px-4 text-center">Outcome</th>
-                <th className="py-3 px-4 text-right">PnL</th>
+                <th className="py-3 px-4 text-right">P&L</th>
                 <th className="py-3 px-4">Forecaster</th>
                 <th className="py-3 px-4 text-center w-8"></th>
               </tr>
@@ -446,8 +446,8 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                                 {/* Reasoning */}
                                 <div className="space-y-1 md:col-span-2">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] uppercase text-[var(--muted)] block">
-                                      Analytical Reasoning & Thesis
+                                    <span className="text-[11px] text-[var(--muted)] font-medium block">
+                                      Analytical reasoning & thesis
                                     </span>
                                     {pred.oracleFallbackUsed && (
                                       <span className="px-2 py-0.5 rounded text-[9px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30">
@@ -460,10 +460,10 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                                   </p>
                                   {pred.postMortem && (
                                     <div className="pt-2">
-                                      <span className="text-[10px] uppercase text-[var(--muted)] block">
-                                        Post-Mortem Resolution Audit
+                                      <span className="text-[11px] text-[var(--muted)] font-medium block">
+                                        Post-mortem resolution audit
                                       </span>
-                                      <p className="text-xs text-[var(--text)]/80 italic">
+                                      <p className="text-xs text-[var(--text-dim)]">
                                         {pred.postMortem}
                                       </p>
                                     </div>
@@ -546,14 +546,14 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                                   {/* Oracle Classification */}
                                   {pred.outcome === "PENDING" && (
                                     <div className="pt-1 border-t border-[var(--border)] flex items-center justify-between">
-                                      <span className="text-[10px] text-[var(--muted)] uppercase font-semibold">Oracle</span>
+                                      <span className="text-[11px] text-[var(--muted)] font-medium">Oracle</span>
                                       {pred.sportType === "crypto" ? (
                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/30">
                                           Tatum Data API
                                         </span>
                                       ) : (
                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/30">
-                                          Manual Resolution
+                                          Manual resolution
                                         </span>
                                       )}
                                     </div>
@@ -563,8 +563,8 @@ export function JournalView({ predictions, onAddPrediction, onRefresh }: Journal
                                   {pred.writeStatus === "confirmed" && pred.blobId ? (
                                     <div className="pt-1.5 border-t border-[var(--border)]">
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] text-[var(--muted)] uppercase font-semibold">
-                                          Walrus Mainnet Blob
+                                        <span className="text-[11px] text-[var(--muted)] font-medium">
+                                          Walrus mainnet blob
                                         </span>
                                         <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win)]/30">
                                           Confirmed

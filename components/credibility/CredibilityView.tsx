@@ -101,13 +101,13 @@ export function CredibilityView({
 
         <div className="flex items-center justify-between gap-3 bg-[var(--surface-subtle)] px-4 py-2.5 rounded-xl border border-[var(--border)] text-xs font-mono-num w-full">
           <div>
-            <span className="text-[10px] text-[var(--muted)] uppercase block font-medium">Dynamic Multiplier Range</span>
+            <span className="text-[11px] text-[var(--muted)] block font-medium">Dynamic multiplier range</span>
             <span className="font-bold text-[var(--accent)]">0.40x — 2.40x</span>
           </div>
           <div className="h-6 w-px bg-[var(--border)]" />
           <div>
-            <span className="text-[10px] text-[var(--muted)] uppercase block font-medium">Evaluated Analysts</span>
-            <span className="font-bold text-[var(--win)]">{forecasters.length} Tracked</span>
+            <span className="text-[11px] text-[var(--muted)] block font-medium">Evaluated analysts</span>
+            <span className="font-bold text-[var(--win)]">{forecasters.length} tracked</span>
           </div>
         </div>
       </div>
@@ -132,8 +132,8 @@ export function CredibilityView({
       ) : (
         /* Grid: Dynamically Evaluated Forecasters */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {forecasters.map((f, idx) => (
-            <BentoCard key={f.handle} delay={idx * 0.05} className="flex flex-col justify-between">
+          {forecasters.map((f) => (
+            <BentoCard key={f.handle} delay={0} className="flex flex-col justify-between">
               <div>
                 <div className="flex flex-col gap-2 mb-2 min-w-0">
                   <div className="min-w-0">
@@ -158,19 +158,19 @@ export function CredibilityView({
                 {/* Stats Bar */}
                 <div className="grid grid-cols-3 gap-2 py-2.5 my-2 border-y border-[var(--border)] text-center text-xs font-mono-num">
                   <div>
-                    <span className="text-[10px] text-[var(--muted)] block uppercase">Win Rate</span>
+                    <span className="text-[10px] text-[var(--muted)] block">Win rate</span>
                     <span className="font-bold text-[var(--text)]">
                       <AnimatedNumber value={f.winRate} decimals={1} suffix="%" />
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[var(--muted)] block uppercase">Record</span>
+                    <span className="text-[10px] text-[var(--muted)] block">Record</span>
                     <span className="font-medium text-[var(--text)]">
                       {f.wins}W - {f.losses}L
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[var(--muted)] block uppercase">Net PnL</span>
+                    <span className="text-[10px] text-[var(--muted)] block">Net P&L</span>
                     <span
                       className={`font-bold ${
                         f.netPnl >= 0 ? "text-[var(--win)]" : "text-[var(--loss)]"
@@ -273,18 +273,18 @@ export function CredibilityView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono-num">
             {/* Unweighted Consensus */}
             <div className="p-4 rounded-[10px] bg-[var(--border-subtle)] border border-[var(--border)] space-y-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
                 <XCircle className="w-3.5 h-3.5 text-[var(--loss)]" />
-                Before Memory (Flat 1.0x Weight)
+                Before memory (flat 1.0x weight)
               </span>
               <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] space-y-1">
-                <span className="text-[10px] text-[var(--muted)] uppercase block">Consensus Call</span>
+                <span className="text-[10px] text-[var(--muted)] block font-medium">Consensus call</span>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-[var(--text)]">
                     {consensusComparison.result.unweightedPick}
                   </span>
                   <span className="text-xs text-[var(--muted)] font-bold">
-                    {consensusComparison.result.unweightedConfidence}% Conviction
+                    {consensusComparison.result.unweightedConfidence}% conviction
                   </span>
                 </div>
               </div>
@@ -295,18 +295,18 @@ export function CredibilityView({
 
             {/* Memory-Weighted Consensus */}
             <div className="p-4 rounded-[10px] bg-[var(--accent)]/5 border border-[var(--accent)]/30 space-y-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-[var(--accent)] flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[var(--win)]" />
-                With Walrus Memory (Adaptive Weights)
+                With Walrus memory (adaptive weights)
               </span>
               <div className="p-3 rounded-[8px] bg-[var(--card)] border border-[var(--accent)]/30 space-y-1">
-                <span className="text-[10px] text-[var(--muted)] uppercase block">Recalibrated Consensus</span>
+                <span className="text-[10px] text-[var(--muted)] block font-medium">Recalibrated consensus</span>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-[var(--accent)]">
                     {consensusComparison.result.weightedPick}
                   </span>
                   <span className="text-xs text-[var(--win)] font-bold">
-                    {consensusComparison.result.weightedConfidence}% Conviction
+                    {consensusComparison.result.weightedConfidence}% conviction
                   </span>
                 </div>
               </div>
@@ -318,8 +318,8 @@ export function CredibilityView({
 
           {/* Breakdown of supporting analysts */}
           <div className="space-y-2 pt-2 border-t border-[var(--border)]">
-            <span className="text-[10px] text-[var(--muted)] uppercase font-mono-num font-semibold block">
-              Mathematical Pick Breakdown
+            <span className="text-[11px] text-[var(--muted)] font-mono-num font-semibold block">
+              Mathematical pick breakdown
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono-num">
               {consensusComparison.result.breakdown.map((b) => (

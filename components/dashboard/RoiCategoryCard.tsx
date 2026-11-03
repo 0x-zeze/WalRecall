@@ -37,7 +37,7 @@ export function RoiCategoryCard({ predictions = [] }: { predictions?: Prediction
   const combined = totalStake > 0 ? Number(((totalPnl / totalStake) * 100).toFixed(1)) : 0;
 
   return (
-    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0.2} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0} className="flex flex-col justify-between">
       <BentoHeader
         title="ROI by Sector"
         subtitle="Simulated return across asset classes"

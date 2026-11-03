@@ -64,7 +64,7 @@ export function CalendarHeatmapCard({
   const activeDays = days.filter((d) => d.hasActivity).length;
 
   return (
-    <BentoCard colSpan="col-span-12" delay={0.4} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12" delay={0} className="flex flex-col justify-between">
       <BentoHeader
         title="Settlement Activity Ledger"
         subtitle="Daily resolved forecast density across the rolling 35-day window"
@@ -97,7 +97,7 @@ export function CalendarHeatmapCard({
                   ? "bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)]/30 font-semibold"
                   : day.count === 2
                   ? "bg-[var(--accent)]/40 text-white border-[var(--accent)]/50 font-semibold"
-                  : "bg-[var(--accent)] text-[#050B14] border-[var(--accent)] font-bold shadow-[0_0_8px_-1px_var(--accent)]";
+                  : "bg-[var(--accent)] text-[#050B14] border-[var(--accent)] font-bold";
 
               const tooltip =
                 day.count === 0
@@ -110,7 +110,7 @@ export function CalendarHeatmapCard({
                 <div
                   key={idx}
                   title={tooltip}
-                  className={`flex-1 h-9 rounded-lg border transition-transform hover:scale-105 cursor-default flex items-center justify-center text-[9px] font-mono-num ${bgClass}`}
+                  className={`flex-1 h-9 rounded-lg border transition-colors hover:border-[var(--accent)] cursor-default flex items-center justify-center text-[9px] font-mono-num ${bgClass}`}
                 >
                   {day.count > 0 ? day.count : "·"}
                 </div>

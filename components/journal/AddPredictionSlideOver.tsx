@@ -383,8 +383,8 @@ export function AddPredictionSlideOver({
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               {/* Category selector */}
               <div>
-                <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px] font-semibold">
-                  Prediction Category
+                <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                  Prediction category
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["soccer", "nba", "crypto"] as PredictionCategory[]).map((cat) => (
@@ -392,7 +392,7 @@ export function AddPredictionSlideOver({
                       key={cat}
                       type="button"
                       onClick={() => handleSelectSportCategory(cat)}
-                      className={`py-2 px-3 rounded-[8px] border text-center uppercase font-semibold text-[10px] tracking-wide transition min-h-[44px] cursor-pointer ${
+                      className={`py-2 px-3 rounded-[8px] border text-center font-semibold text-[11px] capitalize transition min-h-[44px] cursor-pointer ${
                         sportType === cat
                           ? "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--text)]"
                           : "bg-[var(--bg)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--text)]"
@@ -408,14 +408,14 @@ export function AddPredictionSlideOver({
               {sportType === "crypto" && (
                 <div className="p-3.5 rounded-[10px] bg-[var(--bg)] border border-[var(--accent)]/30 space-y-3">
                   <div className="flex items-center justify-between text-[11px] text-[var(--accent)] font-semibold">
-                    <span>Forecast Settlement Parameters</span>
-                    <span className="text-[10px] text-[var(--muted)]">Tatum Data Oracle</span>
+                    <span>Forecast settlement parameters</span>
+                    <span className="text-[10px] text-[var(--muted)]">Tatum data oracle</span>
                   </div>
 
                   <div className="space-y-3">
                     <div>
-                      <label id="crypto-asset-label" className="block text-[var(--muted)] mb-1.5 uppercase text-[9px] font-semibold">
-                        Select Asset
+                      <label id="crypto-asset-label" className="block text-[var(--muted)] mb-1.5 text-[10px] font-medium">
+                        Select asset
                       </label>
                       <div
                         role="radiogroup"
@@ -828,8 +828,8 @@ export function AddPredictionSlideOver({
                   </div>
 
                   <div>
-                    <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                      Target Fixture or Event
+                    <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                      Target fixture or event
                     </label>
                     <input
                       type="text"
@@ -842,8 +842,8 @@ export function AddPredictionSlideOver({
                   </div>
 
                   <div>
-                    <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                      Specific Forecast / Pick
+                    <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                      Specific forecast / pick
                     </label>
                     <input
                       type="text"
@@ -860,8 +860,8 @@ export function AddPredictionSlideOver({
               {/* Odds & Stake */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                    Implied Odds
+                  <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                    Implied odds
                   </label>
                   <input
                     type="text"
@@ -873,8 +873,8 @@ export function AddPredictionSlideOver({
                   />
                 </div>
                 <div>
-                  <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                    Stake Amount ($)
+                  <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                    Stake amount ($)
                   </label>
                   <input
                     type="number"
@@ -891,8 +891,8 @@ export function AddPredictionSlideOver({
               {/* Forecaster & Confidence */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                    Forecaster Handle (@handle) *
+                  <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                    Forecaster handle (@handle) *
                   </label>
                   <input
                     type="text"
@@ -910,17 +910,17 @@ export function AddPredictionSlideOver({
                   )}
                 </div>
                 <div>
-                  <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                    Confidence (1-5 Stars)
+                  <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                    Analyst confidence (1-5)
                   </label>
                   <select
                     value={confidence}
                     onChange={(e) => setConfidence(Number(e.target.value))}
                     className="w-full px-3 py-2.5 rounded-[8px] bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:border-[var(--accent)] focus:outline-none min-h-[44px]"
                   >
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <option key={num} value={num}>
-                        {num} Star{num > 1 ? "s" : ""}
+                    {[1, 2, 3, 4, 5].map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        {lvl} Star{lvl > 1 ? "s" : ""}
                       </option>
                     ))}
                   </select>
@@ -929,8 +929,8 @@ export function AddPredictionSlideOver({
 
               {/* Reasoning */}
               <div>
-                <label className="block text-[var(--muted)] mb-1.5 uppercase text-[10px]">
-                  Analysis Reasoning / Model Signal
+                <label className="block text-[var(--muted)] mb-1.5 text-[11px] font-medium">
+                  Analytical reasoning & thesis
                 </label>
                 <textarea
                   rows={2}

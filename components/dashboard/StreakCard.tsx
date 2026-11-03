@@ -12,7 +12,7 @@ interface StreakCardProps {
 
 export function StreakCard({ currentStreak, recentPicks, hotRun = false }: StreakCardProps) {
   return (
-    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0.15} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0} className="flex flex-col justify-between">
       <BentoHeader
         title="Execution Streak"
         subtitle="Chronological sequence of resolved forecasts"
@@ -40,7 +40,7 @@ export function StreakCard({ currentStreak, recentPicks, hotRun = false }: Strea
             <div
               key={i}
               title={`Pick #${10 - i}: ${res === "W" ? "Accurate (Win)" : "Failed (Loss)"}`}
-              className={`w-7 h-7 rounded-[8px] flex items-center justify-center text-[11px] font-bold font-mono-num transition-transform hover:scale-110 cursor-default ${
+              className={`w-7 h-7 rounded-[8px] flex items-center justify-center text-[11px] font-bold font-mono-num transition-colors cursor-default ${
                 res === "W"
                   ? "bg-[var(--win-bg)] text-[var(--win)] border border-[var(--win-border)]"
                   : "bg-[var(--loss-bg)] text-[var(--loss)] border border-[var(--loss-border)]"

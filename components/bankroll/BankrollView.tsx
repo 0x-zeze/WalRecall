@@ -249,10 +249,10 @@ export function BankrollView({
         <div className="space-y-1">
           <span className="text-xs font-bold text-[var(--text)] font-heading flex items-center gap-1.5">
             <DollarSign className="w-4 h-4 text-[var(--win)]" />
-            Set Initial Simulation Capital
+            Simulation starting capital
           </span>
           <p className="text-[11px] text-[var(--muted)] font-mono-num">
-            Ubah modal awal simulasi sesuai keinginanmu. Semua kurva, saldo akhir, dan kalkulator Kelly akan langsung menyesuaikan.
+            Adjust starting capital. Balance curve and Kelly sizing update automatically.
           </p>
         </div>
 
@@ -557,16 +557,16 @@ export function BankrollView({
             </div>
 
             {/* 4. Live Simulation Telemetry Result Card */}
-            <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--accent)]/10 via-[var(--glass-surface-2)] to-transparent border border-[var(--accent)]/30 space-y-3">
+            <div className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block flex items-center gap-1">
+                <span className="text-[11px] text-[var(--muted)] font-medium flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  Recommended Stake Size
+                  Recommended stake
                 </span>
                 <span className="text-[11px] font-semibold text-[var(--accent)]">
                   {stakeMethod === "kelly"
-                    ? `${(kellyFraction * 100).toFixed(0)}% Kelly Fraction`
-                    : "Fixed Risk"}
+                    ? `${(kellyFraction * 100).toFixed(0)}% Kelly fraction`
+                    : "Fixed risk"}
                 </span>
               </div>
 
@@ -587,7 +587,7 @@ export function BankrollView({
                         : "bg-amber-500/10 text-amber-400 border-amber-500/30"
                     }`}
                   >
-                    {kellyResult.hasEdge ? `+${expectedValuePercent}% Edge` : "No Edge (Pass)"}
+                    {kellyResult.hasEdge ? `+${expectedValuePercent}% edge` : "No edge (pass)"}
                   </span>
                 </div>
               </div>
@@ -595,19 +595,19 @@ export function BankrollView({
               {/* Scenario Breakdown Matrix */}
               <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--border)] text-[10px]">
                 <div className="p-2 rounded bg-[var(--card)] border border-[var(--border)] space-y-0.5">
-                  <span className="text-[var(--muted)] uppercase block">If Win</span>
+                  <span className="text-[var(--muted)] block">If win</span>
                   <span className="font-bold text-[var(--win)] text-xs">
                     +${potentialProfit.toLocaleString()}
                   </span>
                 </div>
                 <div className="p-2 rounded bg-[var(--card)] border border-[var(--border)] space-y-0.5">
-                  <span className="text-[var(--muted)] uppercase block">If Loss</span>
+                  <span className="text-[var(--muted)] block">If loss</span>
                   <span className="font-bold text-[var(--loss)] text-xs">
                     -${recommendedStake.toLocaleString()}
                   </span>
                 </div>
                 <div className="p-2 rounded bg-[var(--card)] border border-[var(--border)] space-y-0.5">
-                  <span className="text-[var(--muted)] uppercase block">Expected Value</span>
+                  <span className="text-[var(--muted)] block">Expected value</span>
                   <span className={`font-bold text-xs ${expectedValueDollars >= 0 ? "text-[var(--win)]" : "text-[var(--loss)]"}`}>
                     {expectedValueDollars >= 0 ? `+$${expectedValueDollars}` : `-$${Math.abs(expectedValueDollars)}`}
                   </span>
@@ -635,7 +635,7 @@ export function BankrollView({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono-num border-collapse">
-            <thead className="bg-[#09182A] text-[var(--muted)] uppercase border-b border-[var(--border)] text-[10px] tracking-wider font-semibold select-none">
+            <thead className="bg-[#09182A] text-[var(--muted)] border-b border-[var(--border)] text-[11px] font-medium select-none">
               <tr>
                 <th className="py-2.5 px-4">Date</th>
                 <th className="py-2.5 px-4">Description</th>

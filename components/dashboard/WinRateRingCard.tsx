@@ -26,7 +26,7 @@ export function WinRateRingCard({
   const strokeDashoffset = circumference - (winRate / 100) * circumference;
 
   return (
-    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0.1} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 sm:col-span-6 lg:col-span-4" delay={0} className="flex flex-col justify-between">
       <BentoHeader
         title="Win Rate Matrix"
         subtitle="Historical prediction accuracy ratio"
@@ -47,29 +47,23 @@ export function WinRateRingCard({
             />
             {/* Active Win Rate Arc */}
             <circle
-              cx="60"
-              cy="60"
+              cx="48"
+              cy="48"
               r={radius}
-              stroke="url(#winGradient)"
-              strokeWidth="8"
+              stroke="var(--win)"
+              strokeWidth="7"
               fill="transparent"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              className="transition-all duration-1000 ease-out"
+              className="transition-all duration-700 ease-out"
             />
-            <defs>
-              <linearGradient id="winGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#38D9A9" />
-                <stop offset="100%" stopColor="#72BFFF" />
-              </linearGradient>
-            </defs>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-2xl font-bold font-mono-num text-[var(--text)]">
               <AnimatedNumber value={winRate} decimals={1} suffix="%" />
             </span>
-            <span className="text-[10px] text-[var(--muted)] font-mono-num uppercase tracking-wider font-semibold">Hit Rate</span>
+            <span className="text-[10px] text-[var(--muted)] font-mono-num font-medium">Hit rate</span>
           </div>
         </div>
 

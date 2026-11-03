@@ -32,7 +32,7 @@ export function BestWorstPickCard({ bestPick, worstPick }: BestWorstPickCardProp
   const worstDelta = worstPick?.credibilityDelta ?? 0;
 
   return (
-    <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.35} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 lg:col-span-8" delay={0} className="flex flex-col justify-between">
       <BentoHeader
         title="Yield Extremes"
         subtitle="Maximum gain and drawdown among resolved records"
@@ -42,9 +42,9 @@ export function BestWorstPickCard({ bestPick, worstPick }: BestWorstPickCardProp
         {/* Best Pick */}
         <div className="p-3.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--win-border)] space-y-2">
           <div className="flex items-center justify-between text-xs font-mono-num">
-            <span className="flex items-center gap-1.5 font-bold text-[var(--win)] uppercase text-[10px] tracking-wider">
+            <span className="flex items-center gap-1.5 font-semibold text-[var(--win)] text-[11px]">
               <TrendingUp className="w-3.5 h-3.5" />
-              Maximum Alpha
+              Maximum alpha
             </span>
             <span className="font-bold text-[var(--win)]">+{bestPnl >= 0 ? `$${bestPnl}` : `-$${Math.abs(bestPnl)}`}</span>
           </div>
@@ -65,9 +65,9 @@ export function BestWorstPickCard({ bestPick, worstPick }: BestWorstPickCardProp
         {/* Worst Pick */}
         <div className="p-3.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--loss-border)] space-y-2">
           <div className="flex items-center justify-between text-xs font-mono-num">
-            <span className="flex items-center gap-1.5 font-bold text-[var(--loss)] uppercase text-[10px] tracking-wider">
+            <span className="flex items-center gap-1.5 font-semibold text-[var(--loss)] text-[11px]">
               <TrendingDown className="w-3.5 h-3.5" />
-              Max Drawdown
+              Max drawdown
             </span>
             <span className="font-bold text-[var(--loss)]">{worstPnl >= 0 ? `+$${worstPnl}` : `-$${Math.abs(worstPnl)}`}</span>
           </div>

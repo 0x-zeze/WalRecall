@@ -94,18 +94,12 @@ html.light {
 
 body {
   background-color: var(--bg);
-  background-image: 
-    radial-gradient(ellipse at 15% 0%, rgba(114, 191, 255, 0.08) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 10%, rgba(9, 24, 42, 0.90) 0%, transparent 60%),
-    radial-gradient(ellipse at 50% 95%, rgba(114, 191, 255, 0.04) 0%, transparent 50%);
-  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  letter-spacing: -0.01em;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 h1, h2, h3, h4, .font-heading {
@@ -124,25 +118,17 @@ h1, h2, h3, h4, .font-heading {
 /* Financial Card styling */
 .liquid-glass, .fin-card, .bento-card {
   background: var(--card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
-  box-shadow: 
-    0 4px 20px -2px rgba(5, 11, 20, 0.60),
-    inset 0 1px 0 0 rgba(114, 191, 255, 0.08);
-  border-radius: 14px;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.40);
+  border-radius: 12px;
   position: relative;
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
-              background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .liquid-glass:hover, .fin-card:hover, .bento-card:hover {
   border-color: var(--border-hover);
-  box-shadow: 
-    0 8px 30px -4px rgba(5, 11, 20, 0.75),
-    0 0 20px -4px rgba(114, 191, 255, 0.12),
-    inset 0 1px 0 0 rgba(114, 191, 255, 0.14);
 }
 
 /* Inner pill radius */

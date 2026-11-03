@@ -77,13 +77,13 @@ export function DashboardView({
 
         <div className="flex items-center gap-2.5 font-mono-num text-xs">
           <div className="flex items-center gap-2 bg-[var(--surface-subtle)] px-3.5 py-2 rounded-xl border border-[var(--border)]">
-            <span className="w-2 h-2 rounded-full bg-[var(--win)] shadow-[0_0_8px_var(--win)]" />
-            <span className="text-[11px] text-[var(--text)] font-semibold">
-              {resolved.length} Resolved Events
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--win)]" />
+            <span className="text-[11px] text-[var(--text)] font-medium">
+              {resolved.length} resolved forecasts
             </span>
             <span className="text-[var(--border)]">|</span>
-            <span className="text-[11px] text-[var(--accent)] font-semibold">
-              {pending} Active Positions
+            <span className="text-[11px] text-[var(--accent)] font-medium">
+              {pending} active positions
             </span>
           </div>
         </div>

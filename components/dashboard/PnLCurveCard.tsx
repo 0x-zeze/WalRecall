@@ -70,10 +70,10 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
   }));
 
   return (
-    <BentoCard colSpan="col-span-12 lg:col-span-8" delay={0.05} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 lg:col-span-8" delay={0} className="flex flex-col justify-between">
       <div>
         <BentoHeader
-          title="Cumulative PnL Performance"
+          title="Cumulative P&L Performance"
           subtitle="Simulated capital trajectory from resolved market forecasts"
           action={
             <div className="flex items-center gap-1 bg-[#09182A] p-1 rounded-xl border border-[var(--border)]">
@@ -81,7 +81,7 @@ export function PnLCurveCard({ records = [], currentPnl, totalPnlPercent }: PnLC
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono-num font-medium transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono-num font-medium transition-colors ${
                     timeframe === tf
                       ? "bg-[#102840] text-[var(--accent)] border border-[var(--accent)]/40 shadow-sm font-semibold"
                       : "text-[var(--muted)] hover:text-[var(--text)]"

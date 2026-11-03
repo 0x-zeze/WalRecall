@@ -20,7 +20,7 @@ export function OpenPredictionsCard({
   const pendingPicks = liveOpenPredictions(predictions, isMainnetConnected).slice(0, 4);
 
   return (
-    <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0.3} className="flex flex-col justify-between">
+    <BentoCard colSpan="col-span-12 lg:col-span-6" delay={0} className="flex flex-col justify-between">
       <div>
         <BentoHeader
           title="Active Open Positions"
