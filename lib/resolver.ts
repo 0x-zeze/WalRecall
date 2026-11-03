@@ -451,14 +451,18 @@ export async function resolveDuePredictions(
           pred.fixture.kickoff
         );
 
-        if (!gameStatus) {
+        if (!gameStatus || gameStatus.lookupFailure) {
+          const reason =
+            gameStatus?.lookupFailure === "request_failed"
+              ? "ESPN request failed/timeout"
+              : "Event not found in ESPN scoreboard";
           results.push({
             predictionId: pred.id,
             analyst: pred.analyst,
             target: pred.target,
             pick: pred.pick,
             status: "failed",
-            reason: "Could not fetch match status from ESPN public scoreboard.",
+            reason,
           });
           continue;
         }

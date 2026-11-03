@@ -48,7 +48,7 @@ import {
   cumulativePnlSeries,
   liveOpenPredictions,
 } from "../lib/dashboard-stats.ts";
-import { settleMarket } from "../lib/sports-resolver.ts";
+import { settleMarket, fetchEspnGameStatus, espnScoreboardDateRange } from "../lib/sports-resolver.ts";
 import { parseOdds, pnlFromOdds } from "../lib/odds.ts";
 import { marketKey, selectionKey, groupOpenMarkets } from "../lib/markets.ts";
 import {
@@ -2852,6 +2852,300 @@ async function main() {
       assert.equal(res.results[0].evidence?.source, "espn-scoreboard (unofficial)");
       assert.ok(!res.results[0].evidence?.details?.includes("Tatum")); // Non-Tatum honest attribution
 
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    function finalStatus(name, description) {
+      return {
+        state: "post",
+        completed: true,
+        name,
+        description: description || "Final",
+      };
+    }
+
+    function scoreboardEvent(id, statusType, home, away) {
+      return {
+        id,
+        status: { type: statusType },
+        competitions: [
+          {
+            competitors: [
+              { homeAway: "home", score: String(home) },
+              { homeAway: "away", score: String(away) },
+            ],
+          },
+        ],
+      };
+    }
+
+    function sportsCandidate(id, eventId, kickoff, sport, league) {
+      return {
+        id,
+        category: "prediction",
+        sportType: sport,
+        title: `${sport} ${eventId}`,
+        target: `${sport} ${eventId}`,
+        pick: "Home to win",
+        analyst: "@Sharps",
+        odds: "-110",
+        stake: 250,
+        pnl: 0,
+        outcome: "PENDING",
+        credibilityDelta: 0,
+        confidence: 4,
+        timestamp: Date.parse(kickoff),
+        dateStr: "Nov 3",
+        writeStatus: "confirmed",
+        deadline: kickoff,
+        fixture: {
+          provider: "espn",
+          eventId,
+          sport,
+          league,
+          leagueLabel: league,
+          kickoff,
+          home: { id: "1", name: "Home" },
+          away: { id: "2", name: "Away" },
+        },
+        market: { type: "moneyline", selection: "home" },
+      };
+    }
+
+    await it("BUG 3: timezone window: kickoff 2026-11-03T00:00Z is found only on the range that includes 20261102", async () => {
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const kickoff = "2026-11-03T00:00:00.000Z";
+      assert.equal(espnScoreboardDateRange(kickoff), "20261102-20261104");
+
+      const originalFetch = globalThis.fetch;
+      const seen = [];
+      globalThis.fetch = async (url) => {
+        const href = String(url);
+        seen.push(href);
+        if (href.includes("/scoreboard?") && href.includes("dates=20261102-20261104")) {
+          return {
+            ok: true,
+            json: async () => ({
+              events: [scoreboardEvent("nba-late", finalStatus("STATUS_FINAL"), 110, 102)],
+            }),
+          };
+        }
+        if (href.includes("/scoreboard?")) {
+          return { ok: true, json: async () => ({ events: [] }) };
+        }
+        throw new Error(`unexpected espn url ${href}`);
+      };
+
+      const res = await resolveDuePredictions(
+        [sportsCandidate("rec-tz-window", "nba-late", kickoff, "nba", "nba")],
+        Date.parse("2026-11-03T06:00:00.000Z")
+      );
+      assert.equal(res.resolvedCount, 1);
+      assert.equal(res.results[0].status, "resolved");
+      assert.equal(res.results[0].outcome, "ACCURATE");
+      assert.ok(seen.some((u) => u.includes("dates=20261102-20261104")));
+      assert.ok(!seen.some((u) => /dates=20261103($|&)/.test(u)));
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 3: summary fallback finds an event missing from the scoreboard", async () => {
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const kickoff = "2026-11-03T00:00:00.000Z";
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async (url) => {
+        const href = String(url);
+        if (href.includes("/scoreboard?")) {
+          return { ok: true, json: async () => ({ events: [] }) };
+        }
+        if (href.includes("/summary?event=sum-1")) {
+          return {
+            ok: true,
+            json: async () => ({
+              header: {
+                competitions: [
+                  {
+                    status: { type: finalStatus("STATUS_FINAL") },
+                    competitors: [
+                      { homeAway: "home", score: "118" },
+                      { homeAway: "away", score: "99" },
+                    ],
+                  },
+                ],
+              },
+            }),
+          };
+        }
+        throw new Error(`unexpected espn url ${href}`);
+      };
+
+      const res = await resolveDuePredictions(
+        [sportsCandidate("rec-summary-only", "sum-1", kickoff, "nba", "nba")],
+        Date.parse("2026-11-03T06:00:00.000Z")
+      );
+      assert.equal(res.resolvedCount, 1);
+      assert.equal(res.results[0].outcome, "ACCURATE");
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 3: missing from scoreboard and summary reports not found", async () => {
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const kickoff = "2026-11-03T00:00:00.000Z";
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async (url) => {
+        const href = String(url);
+        if (href.includes("/scoreboard?")) {
+          return { ok: true, json: async () => ({ events: [] }) };
+        }
+        if (href.includes("/summary?")) {
+          return { ok: true, json: async () => ({ header: { competitions: [] } }) };
+        }
+        throw new Error(`unexpected espn url ${href}`);
+      };
+
+      const res = await resolveDuePredictions(
+        [sportsCandidate("rec-missing", "gone-1", kickoff, "nba", "nba")],
+        Date.parse("2026-11-03T06:00:00.000Z")
+      );
+      assert.equal(res.resolvedCount, 0);
+      assert.equal(res.results[0].status, "failed");
+      assert.equal(res.results[0].reason, "Event not found in ESPN scoreboard");
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 3: request failure is distinct from not found", async () => {
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const kickoff = "2026-11-03T00:00:00.000Z";
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => {
+        throw new Error("timeout");
+      };
+
+      const res = await resolveDuePredictions(
+        [sportsCandidate("rec-timeout", "to-1", kickoff, "nba", "nba")],
+        Date.parse("2026-11-03T06:00:00.000Z")
+      );
+      assert.equal(res.results[0].status, "failed");
+      assert.equal(res.results[0].reason, "ESPN request failed/timeout");
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 3: STATUS_FULL_TIME soccer and STATUS_FINAL NBA settle as final; AET and penalties stay manual", async () => {
+      const soccer = await fetchEspnGameStatus(
+        "soccer",
+        "eng.1",
+        "ft-1",
+        "2026-11-03T18:00:00.000Z",
+        async (url) => {
+          if (String(url).includes("/scoreboard?")) {
+            return {
+              ok: true,
+              json: async () => ({
+                events: [scoreboardEvent("ft-1", finalStatus("STATUS_FULL_TIME", "Full Time"), 2, 0)],
+              }),
+            };
+          }
+          throw new Error("summary should not be called");
+        }
+      );
+      assert.equal(soccer?.completed, true);
+      assert.equal(soccer?.state, "post");
+      assert.equal(soccer?.isOvertimeOrPenalties, false);
+      assert.equal(soccer?.score?.home, 2);
+
+      const nba = await fetchEspnGameStatus(
+        "nba",
+        "nba",
+        "nba-final",
+        "2026-11-03T00:00:00.000Z",
+        async (url) => ({
+          ok: true,
+          json: async () => ({
+            events: String(url).includes("/scoreboard?")
+              ? [scoreboardEvent("nba-final", finalStatus("STATUS_FINAL"), 120, 111)]
+              : [],
+          }),
+        })
+      );
+      assert.equal(nba?.completed, true);
+      assert.equal(nba?.statusName, "STATUS_FINAL");
+      assert.equal(nba?.isOvertimeOrPenalties, false);
+
+      for (const name of ["STATUS_FINAL_AET", "STATUS_FINAL_PEN"]) {
+        const aet = await fetchEspnGameStatus(
+          "soccer",
+          "eng.1",
+          "aet-1",
+          "2026-11-03T18:00:00.000Z",
+          async () => ({
+            ok: true,
+            json: async () => ({
+              events: [scoreboardEvent("aet-1", finalStatus(name, name), 2, 2)],
+            }),
+          })
+        );
+        assert.equal(aet?.completed, true);
+        assert.equal(aet?.isOvertimeOrPenalties, true);
+      }
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => ({
+        ok: true,
+        json: async () => ({
+          events: [scoreboardEvent("aet-due", finalStatus("STATUS_FINAL_AET", "After Extra Time"), 2, 1)],
+        }),
+      });
+      const due = await resolveDuePredictions(
+        [sportsCandidate("rec-aet", "aet-due", "2026-11-03T18:00:00.000Z", "soccer", "eng.1")],
+        Date.parse("2026-11-03T22:00:00.000Z")
+      );
+      assert.equal(due.resolvedCount, 0);
+      assert.equal(due.results[0].status, "manual_required");
+      assert.ok(due.results[0].reason?.toLowerCase().includes("penalt") || due.results[0].reason?.includes("Extra Time"));
+
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
+      globalThis.fetch = originalFetch;
+    });
+
+    await it("BUG 3: two resolve passes do not write memory twice", async () => {
+      process.env.ENABLE_SPORTS_AUTORESOLVE = "true";
+      const kickoff = "2026-11-03T00:00:00.000Z";
+      const originalFetch = globalThis.fetch;
+      let writes = 0;
+      const stored = [];
+      setCustomSaveMemory(async (record) => {
+        writes += 1;
+        const saved = { ...record, id: record.id || "rec-once", writeStatus: "confirmed", blobId: "blob-once" };
+        stored.push(saved);
+        return saved;
+      });
+      setCustomGetAllMemories(async () => stored.slice());
+      globalThis.fetch = async () => ({
+        ok: true,
+        json: async () => ({
+          events: [scoreboardEvent("once-1", finalStatus("STATUS_FINAL"), 4, 1)],
+        }),
+      });
+
+      const candidate = sportsCandidate("rec-once", "once-1", kickoff, "nba", "nba");
+      const first = await resolveDuePredictions([candidate], Date.parse("2026-11-03T06:00:00.000Z"));
+      const second = await resolveDuePredictions([candidate], Date.parse("2026-11-03T06:00:00.000Z"));
+      assert.equal(first.resolvedCount, 1);
+      assert.equal(second.resolvedCount, 0);
+      assert.equal(second.results[0].status, "skipped");
+      assert.equal(writes, 1);
+
+      setCustomSaveMemory(null);
+      setCustomGetAllMemories(null);
       process.env.ENABLE_SPORTS_AUTORESOLVE = "false";
       globalThis.fetch = originalFetch;
     });
