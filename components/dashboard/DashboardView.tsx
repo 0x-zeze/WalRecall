@@ -38,6 +38,7 @@ export function DashboardView({
   const losses = resolved.filter((p) => p.outcome === "FAILED").length;
   const openList = liveOpenPredictions(predictions, isMainnetConnected);
   const pending = openList.length;
+  const totalPending = predictions.filter((p) => p.outcome === "PENDING").length;
   const winRate = resolved.length > 0 ? (wins / resolved.length) * 100 : 0;
 
   const recent10: ("W" | "L")[] = resolved
@@ -95,7 +96,7 @@ export function DashboardView({
           winRate={Number(winRate.toFixed(1))}
           wins={wins}
           losses={losses}
-          pending={pending}
+          pending={totalPending}
           liveCount={sample.live}
           backtestCount={sample.backtest}
         />
