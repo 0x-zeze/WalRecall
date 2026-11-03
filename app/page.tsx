@@ -31,6 +31,7 @@ export default function Home() {
   const [seeding, setSeeding] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isMainnetConnected, setIsMainnetConnected] = useState<boolean>(false);
+  const [possiblyTruncated, setPossiblyTruncated] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -55,6 +56,7 @@ export default function Home() {
       const memData = await memRes.json();
       if (memData?.success) {
         setIsMainnetConnected(Boolean(memData.isMainnetConnected));
+        setPossiblyTruncated(Boolean(memData.possiblyTruncated));
 
         if (memData.data?.length > 0) {
           const liveRecords: PredictionRecord[] = memData.data.map((m: Partial<PredictionRecord>, idx: number) => ({
@@ -244,6 +246,7 @@ export default function Home() {
               predictions={predictions}
               walrusMemoriesCount={countOnChainBlobs(predictions)}
               isMainnetConnected={isMainnetConnected}
+              possiblyTruncated={possiblyTruncated}
             />
           )}
 

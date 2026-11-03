@@ -29,7 +29,16 @@ import {
 } from "../lib/tatum.ts";
 import { dedupePredictions } from "../lib/dedupe.ts";
 import { DEMO_PREDICTIONS } from "../lib/demo-data.ts";
-import { setCustomSaveMemory, setCustomGetAllMemories } from "../lib/walrus.ts";
+import {
+  saveMemory,
+  setCustomSaveMemory,
+  setCustomGetAllMemories,
+  setCustomMemWalClient,
+  getAllMemoriesWithMeta,
+  invalidateRecallCache,
+  getRecallCacheForTesting,
+  RECALL_LIMIT_PER_QUERY,
+} from "../lib/walrus.ts";
 import * as grpc from "@grpc/grpc-js";
 import { getSuiLedgerPackageDefinition } from "../lib/sui-grpc.ts";
 import {
@@ -352,6 +361,61 @@ async function main() {
       assert.equal(res.unweightedPick, "FAVORITE -1.5");
       assert.equal(res.weightedPick, "UNDERDOG +1.5");
       assert.equal(res.pivoted, true);
+    });
+
+    await it("BUG 1: analyst with 0W-0L produces recent=[] and zero wins/losses, avoiding fake W", () => {
+      const records = [
+        {
+          id: "p1",
+          category: "prediction",
+          sportType: "soccer",
+          title: "t1",
+          content: "",
+          analyst: "@FreshTrader",
+          target: "match 1",
+          pick: "home",
+          odds: "-110",
+          stake: 100,
+          pnl: 0,
+          outcome: "PENDING",
+          credibilityDelta: 0,
+          confidence: 3,
+          timestamp: 1000,
+          dateStr: "Day",
+          writeStatus: "local-demo",
+        },
+        {
+          id: "p2",
+          category: "prediction",
+          sportType: "crypto",
+          title: "t2",
+          content: "",
+          analyst: "@FreshTrader",
+          target: "SUI/USD",
+          pick: "above",
+          odds: "-110",
+          stake: 100,
+          pnl: 0,
+          outcome: "PENDING",
+          credibilityDelta: 0,
+          confidence: 4,
+          timestamp: 2000,
+          dateStr: "Day",
+          writeStatus: "local-demo",
+        },
+      ];
+      const stats = computeForecasterStats(records);
+      assert.equal(stats.length, 1);
+      const f = stats[0];
+      assert.equal(f.handle, "@FreshTrader");
+      assert.equal(f.wins, 0);
+      assert.equal(f.losses, 0);
+      assert.equal(f.pending, 2);
+      assert.equal(f.winRate, 0);
+      assert.deepEqual(f.recent, []);
+      // Ensure mapping over empty recent does not produce any elements or errors
+      const renderedBadges = f.recent.map((r) => r);
+      assert.equal(renderedBadges.length, 0);
     });
 
     await it("BUG 1: pending-only analyst has an empty recent form, mixed outcomes are newest-first and capped at 5", () => {
@@ -3688,8 +3752,53 @@ async function main() {
       assert.equal(parseStartingCapital("$10,000"), 10000);
     });
 
+    await it("BUG 4: simulates typing '5000' character by character without 105000 glitch", () => {
+      // Simulate typing sequence starting from cleared field:
+      let storedCapital = 10000;
+
+      function simulateKeystroke(char, currentDisplay) {
+        const nextDisplay = currentDisplay + char;
+        const parsed = parseStartingCapital(nextDisplay);
+        // Only update stored capital if parsed is valid and within [10, 1_000_000_000]
+        if (parsed !== null && parsed >= MIN_STARTING_CAPITAL && parsed <= MAX_STARTING_CAPITAL) {
+          storedCapital = parsed;
+        }
+        return nextDisplay;
+      }
+
+      // 1. User clears field
+      let display = "";
+      // Stored capital remains at 10000 while field is empty (does NOT snap to 10!)
+      assert.equal(storedCapital, 10000);
+
+      // 2. User types "5"
+      display = simulateKeystroke("5", display);
+      assert.equal(display, "5");
+      // "5" < MIN (10), so storedCapital remains 10000
+      assert.equal(storedCapital, 10000);
+
+      // 3. User types "0" -> "50"
+      display = simulateKeystroke("0", display);
+      assert.equal(display, "50");
+      assert.equal(storedCapital, 50);
+
+      // 4. User types "0" -> "500"
+      display = simulateKeystroke("0", display);
+      assert.equal(display, "500");
+      assert.equal(storedCapital, 500);
+
+      // 5. User types "0" -> "5000"
+      display = simulateKeystroke("0", display);
+      assert.equal(display, "5000");
+      assert.equal(storedCapital, 5000); // Exactly 5000, NOT 105000!
+
+      // 6. User blurs
+      const blurred = resolveCapitalOnBlur(display, storedCapital);
+      assert.equal(blurred.value, 5000);
+      assert.equal(blurred.formatted, "5000");
+    });
+
     await it("BUG 4: resolveCapitalOnBlur clamps values, handles blur with empty string, prevents NaN/Infinity", () => {
-      // Valid input inside range [10, 1_000_000_000]
       const rValid = resolveCapitalOnBlur("5000", 10000);
       assert.equal(rValid.value, 5000);
       assert.equal(rValid.formatted, "5000");
@@ -3875,6 +3984,243 @@ async function main() {
       const heavyFavNoEdge = calculateKelly(10000, 1.2, 80.0);
       assert.equal(heavyFavNoEdge.hasEdge, false);
       assert.equal(heavyFavNoEdge.recommendedStake, 0);
+    });
+  });
+
+  await describe("BUG 5: Walrus Multi-Query Recall, Truncation Detection & In-Memory Cache", async () => {
+    function createMockHit(id, timestamp, outcome = "ACCURATE", pnl = 100, blobIdSuffix = "") {
+      const blobId = `blob-${id}${blobIdSuffix ? "-" + blobIdSuffix : ""}`;
+      const rec = {
+        id,
+        category: "prediction",
+        sportType: "soccer",
+        title: `Test ${id}`,
+        content: `Content ${id}`,
+        analyst: "@WalrusPro",
+        target: "Team A vs Team B",
+        pick: "Team A to win",
+        odds: "-110",
+        stake: 250,
+        pnl,
+        outcome,
+        credibilityDelta: 6,
+        confidence: 4,
+        timestamp,
+        dateStr: "Nov 3",
+        writeStatus: "confirmed",
+        blobId,
+        source: "walrus",
+      };
+      const payload = predictionRecordToPayload(rec);
+      const text = encodeMemory(payload);
+      return { blob_id: blobId, text };
+    }
+
+    await it("gabungan beberapa query tanpa duplikat", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hit1 = createMockHit("pred-1", 1000);
+      const hit2 = createMockHit("pred-2", 2000);
+      const hit3 = createMockHit("pred-3", 3000);
+
+      const mockClient = {
+        recall: async ({ query, limit }) => {
+          assert.equal(limit, RECALL_LIMIT_PER_QUERY); // Must use 100
+          if (query.includes("prediction")) {
+            return { results: [hit1, hit2] }; // Has hit1, hit2
+          }
+          if (query.includes("resolution")) {
+            return { results: [hit2, hit3] }; // Has hit2 (duplicate!), hit3
+          }
+          return { results: [] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, possiblyTruncated } = await getAllMemoriesWithMeta();
+
+      // Exactly 3 unique records deduplicated by blob_id
+      assert.equal(records.length, 3);
+      const ids = records.map((r) => r.id);
+      assert.deepEqual(ids, ["pred-3", "pred-2", "pred-1"]); // Sorted newest first!
+      assert.equal(possiblyTruncated, false);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("kegagalan satu query tidak menggagalkan semua (partial failure tolerance)", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hitGood = createMockHit("pred-good", 5000);
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            throw new Error("Temporary relayer network timeout");
+          }
+          if (query.includes("resolution")) {
+            return { results: [hitGood] };
+          }
+          return { results: [] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, possiblyTruncated } = await getAllMemoriesWithMeta();
+
+      assert.equal(records.length, 1);
+      assert.equal(records[0].id, "pred-good");
+      assert.equal(possiblyTruncated, false);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("deteksi truncated ketika hasil query == limit (100)", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      // Create 100 mock hits
+      const fullHits = [];
+      for (let i = 0; i < 100; i++) {
+        fullHits.push(createMockHit(`batch-${i}`, 1000 + i));
+      }
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            return { results: fullHits }; // Exactly 100 hits!
+          }
+          return { results: [] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, possiblyTruncated } = await getAllMemoriesWithMeta();
+
+      assert.equal(records.length, 100);
+      assert.equal(possiblyTruncated, true); // Must flag truncation!
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("cache dan invalidasi setelah saveMemory", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      let queryCount = 0;
+      const hitCached = createMockHit("pred-cache-1", 1000);
+
+      const mockClient = {
+        recall: async () => {
+          queryCount++;
+          return { results: [hitCached] };
+        },
+        remember: async () => ({ job_id: "job-123" }),
+        waitForRememberJob: async () => ({ blob_id: "blob-new-123" }),
+      };
+
+      setCustomMemWalClient(mockClient);
+
+      // Call 1: misses cache, executes RECALL_QUERIES (4 queries)
+      const res1 = await getAllMemoriesWithMeta();
+      assert.equal(res1.fromCache, undefined);
+      assert.equal(queryCount, 4);
+
+      // Call 2: hits cache within TTL (queryCount stays 4)
+      const res2 = await getAllMemoriesWithMeta();
+      assert.equal(res2.fromCache, true);
+      assert.equal(queryCount, 4);
+
+      // Call saveMemory -> must invalidate recall cache
+      await saveMemory({
+        title: "New Prediction",
+        content: "Content",
+        analyst: "@NewAnalyst",
+        target: "New Target",
+        pick: "New Pick",
+        outcome: "PENDING",
+        credibilityDelta: 0,
+      });
+
+      // Call 3: after saveMemory, cache is invalidated so it fetches again
+      const res3 = await getAllMemoriesWithMeta();
+      assert.equal(res3.fromCache, undefined);
+      assert.equal(queryCount, 8); // 4 more queries made!
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("stale-on-error: seluruh query recall gagal tetap mengembalikan cache lama daripada crash", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hitOriginal = createMockHit("pred-stale-test", 1000);
+      let shouldFail = false;
+
+      const mockClient = {
+        recall: async () => {
+          if (shouldFail) {
+            throw new Error("Relayer 503 Service Unavailable");
+          }
+          return { results: [hitOriginal] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+
+      // Step 1: Prime the cache
+      const prime = await getAllMemoriesWithMeta();
+      assert.equal(prime.records.length, 1);
+      assert.equal(prime.records[0].id, "pred-stale-test");
+
+      // Step 2: Relayer goes down completely
+      shouldFail = true;
+      // Invalidate the fresh timestamp by setting cachedAt to 2 hours ago
+      const cache = getRecallCacheForTesting();
+      assert.ok(cache);
+      cache.cachedAt = Date.now() - 7200000;
+
+      // Recall attempts query -> all fail -> falls back to stale cache!
+      const staleRes = await getAllMemoriesWithMeta();
+      assert.equal(staleRes.records.length, 1);
+      assert.equal(staleRes.records[0].id, "pred-stale-test");
+      assert.equal(staleRes.stale, true);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("urutan dan merge tetap benar saat recall", async () => {
+      setCustomGetAllMemories(null);
+
+      // Same prediction id across different Walrus blobs: pending (older) and resolved (newer)
+      const pendingHit = createMockHit("pred-merge", 1000, "PENDING", 0, "pending");
+      const resolvedHit = createMockHit("pred-merge", 2000, "ACCURATE", 227, "resolved");
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) return { results: [pendingHit] };
+          if (query.includes("resolution")) return { results: [resolvedHit] };
+          return { results: [] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records } = await getAllMemoriesWithMeta();
+
+      // Dedupe rule: resolved beats pending, newest timestamp wins
+      assert.equal(records.length, 1);
+      assert.equal(records[0].id, "pred-merge");
+      assert.equal(records[0].outcome, "ACCURATE");
+      assert.equal(records[0].pnl, 227);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
     });
   });
 

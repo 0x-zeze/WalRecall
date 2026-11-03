@@ -15,7 +15,17 @@ export type MemoryRecord = PredictionRecord;
 // In production with Walrus keys configured, the source of truth is Walrus via recall().
 const localDemoCache: MemoryRecord[] = [...DEMO_PREDICTIONS];
 
+let customMemWalClient: MemWal | null = null;
+
+/** Test seam only. Production client is unchanged when this is unset. */
+export function setCustomMemWalClient(client: MemWal | null) {
+  customMemWalClient = client;
+}
+
 export function getMemWalClient(): MemWal | null {
+  if (customMemWalClient) {
+    return customMemWalClient;
+  }
   const key = process.env.MEMWAL_PRIVATE_KEY;
   const accountId = process.env.MEMWAL_ACCOUNT_ID;
   const serverUrl = process.env.MEMWAL_SERVER_URL || "https://relayer.memory.walrus.xyz";
@@ -79,34 +89,114 @@ export async function checkWalrusConnection(): Promise<{
   }
 }
 
+export const RECALL_QUERIES = [
+  "ALPHARECALL_V1 prediction",
+  "ALPHARECALL_V1 resolution",
+  "ALPHARECALL_V1 soccer nba",
+  "ALPHARECALL_V1 crypto SUI BTC ETH",
+] as const;
+
+export const RECALL_LIMIT_PER_QUERY = 100; // Relayer max limit per SDK RecallOptions
+export const RECALL_TIMEOUT_MS = 10000;    // 10s budget per request
+export const RECALL_CACHE_TTL_MS = 45000;  // 45s in-memory cache
+
+export interface RecallCacheEntry {
+  records: MemoryRecord[];
+  possiblyTruncated: boolean;
+  cachedAt: number;
+}
+let recallCache: RecallCacheEntry | null = null;
+
+export function invalidateRecallCache(): void {
+  recallCache = null;
+}
+
+export function getRecallCacheForTesting(): RecallCacheEntry | null {
+  return recallCache;
+}
+
+export interface GetAllMemoriesResult {
+  records: MemoryRecord[];
+  possiblyTruncated: boolean;
+  fromCache?: boolean;
+  stale?: boolean;
+}
+
 /**
- * Retrieve all memories from Walrus Memory on Mainnet via recall().
- * Executes semantic recall, filters and validates via decodeMemory(),
+ * Retrieve all memories from Walrus Memory on Mainnet via multi-query recall().
+ * Executes semantic recall across diverse topics, filters and validates via decodeMemory(),
  * drops invalid or non-prefixed items, and sorts by timestamp descending.
  * Falls back to canonical demo data ONLY if Walrus keys are missing or recall fails.
  */
-export async function getAllMemories(): Promise<MemoryRecord[]> {
+export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
   if (customGetAllMemories) {
-    return customGetAllMemories();
+    const records = await customGetAllMemories();
+    return { records, possiblyTruncated: false };
   }
+
+  const now = Date.now();
+  if (recallCache && now - recallCache.cachedAt < RECALL_CACHE_TTL_MS) {
+    return {
+      records: recallCache.records,
+      possiblyTruncated: recallCache.possiblyTruncated,
+      fromCache: true,
+    };
+  }
+
   const client = getMemWalClient();
   if (!client) {
-    return dedupePredictions(localDemoCache);
+    return {
+      records: dedupePredictions(localDemoCache),
+      possiblyTruncated: false,
+    };
   }
 
   try {
-    // Multi-query recall to maximize retrieval coverage from Walrus
-    const [recallRes1, recallRes2] = await Promise.all([
-      client.recall({ query: "ALPHARECALL_V1 resolution prediction", limit: 30 }),
-      client.recall({ query: "credibility audit sports crypto", limit: 20 }),
-    ]);
+    const settled = await Promise.allSettled(
+      RECALL_QUERIES.map((query) =>
+        client.recall({
+          query,
+          limit: RECALL_LIMIT_PER_QUERY,
+          timeoutMs: RECALL_TIMEOUT_MS,
+        })
+      )
+    );
 
-    const combinedHits = [
-      ...(recallRes1?.results || []),
-      ...(recallRes2?.results || []),
-    ];
+    let anySuccess = false;
+    let possiblyTruncated = false;
+    const combinedHits: Array<{ blob_id?: string; text: string }> = [];
 
-    // Deduplicate hits by blob_id
+    settled.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        anySuccess = true;
+        const results = (res.value as { results?: Array<{ blob_id?: string; text: string }> })?.results;
+        if (Array.isArray(results)) {
+          if (results.length >= RECALL_LIMIT_PER_QUERY) {
+            possiblyTruncated = true;
+          }
+          combinedHits.push(...results);
+        }
+      } else {
+        console.warn(`Walrus recall query "${RECALL_QUERIES[i]}" failed:`, res.reason);
+      }
+    });
+
+    if (!anySuccess) {
+      if (recallCache) {
+        console.warn("All Walrus recall queries failed, returning stale cache.");
+        return {
+          records: recallCache.records,
+          possiblyTruncated: recallCache.possiblyTruncated,
+          fromCache: true,
+          stale: true,
+        };
+      }
+      return {
+        records: dedupePredictions(localDemoCache),
+        possiblyTruncated: false,
+      };
+    }
+
     const seenBlobs = new Set<string>();
     const validRecords: MemoryRecord[] = [];
 
@@ -114,29 +204,51 @@ export async function getAllMemories(): Promise<MemoryRecord[]> {
       if (!item.blob_id || seenBlobs.has(item.blob_id)) continue;
       seenBlobs.add(item.blob_id);
 
-      // Strictly validate schema via decodeMemory()
       const decoded = decodeMemory(item.text);
-      if (!decoded) {
-        // Discard invalid, malformed, or un-prefixed memories
-        continue;
-      }
+      if (!decoded) continue;
 
       const record = payloadToPredictionRecord(decoded, item.blob_id);
       validRecords.push(record);
     }
 
-    if (validRecords.length > 0) {
-      // Sort chronologically newest first and deduplicate by prediction id
-      validRecords.sort((a, b) => b.timestamp - a.timestamp);
-      return dedupePredictions(validRecords);
+    let finalRecords = validRecords;
+    if (finalRecords.length > 0) {
+      finalRecords.sort((a, b) => b.timestamp - a.timestamp);
+      finalRecords = dedupePredictions(finalRecords);
+    } else {
+      finalRecords = dedupePredictions(localDemoCache);
     }
 
-    // If no valid Walrus memories were recalled yet, return local demo data
-    return dedupePredictions(localDemoCache);
+    recallCache = {
+      records: finalRecords,
+      possiblyTruncated,
+      cachedAt: Date.now(),
+    };
+
+    return {
+      records: finalRecords,
+      possiblyTruncated,
+    };
   } catch (error) {
-    console.warn("Falling back to local demo data after Walrus recall failure:", error);
-    return dedupePredictions(localDemoCache);
+    console.warn("Falling back after Walrus recall failure:", error);
+    if (recallCache) {
+      return {
+        records: recallCache.records,
+        possiblyTruncated: recallCache.possiblyTruncated,
+        fromCache: true,
+        stale: true,
+      };
+    }
+    return {
+      records: dedupePredictions(localDemoCache),
+      possiblyTruncated: false,
+    };
   }
+}
+
+export async function getAllMemories(): Promise<MemoryRecord[]> {
+  const { records } = await getAllMemoriesWithMeta();
+  return records;
 }
 
 /**
@@ -169,6 +281,7 @@ export function setCustomGetAllMemories(fn: (() => Promise<MemoryRecord[]>) | nu
 }
 
 export async function saveMemory(record: SaveMemoryInput): Promise<MemoryRecord> {
+  invalidateRecallCache();
   if (customSaveMemory) {
     return customSaveMemory(record);
   }
@@ -246,6 +359,7 @@ export async function saveMemory(record: SaveMemoryInput): Promise<MemoryRecord>
     newRecord.writeError = errorMsg;
   }
 
+  invalidateRecallCache();
   localDemoCache.unshift(newRecord);
   return newRecord;
 }

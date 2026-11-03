@@ -9,6 +9,7 @@ import {
   TrendingUp,
   ShieldCheck,
   Inbox,
+  AlertTriangle,
 } from "lucide-react";
 import { BentoCard, BentoHeader } from "../ui/BentoCard";
 import { AnimatedNumber } from "../ui/AnimatedNumber";
@@ -27,12 +28,14 @@ interface CredibilityViewProps {
   predictions: PredictionRecord[];
   walrusMemoriesCount: number;
   isMainnetConnected?: boolean;
+  possiblyTruncated?: boolean;
 }
 
 export function CredibilityView({
   predictions,
   walrusMemoriesCount,
   isMainnetConnected = false,
+  possiblyTruncated = false,
 }: CredibilityViewProps) {
   // PURE CALCULATION: Derived strictly from actual predictions / recalled memories
   const forecasters: ForecasterAnalysis[] = useMemo(() => {
@@ -108,6 +111,14 @@ export function CredibilityView({
           </div>
         </div>
       </div>
+
+      {/* Truncation warning indicator */}
+      {possiblyTruncated && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono-num shadow-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>Showing {predictions.length} records; recall may be truncated</span>
+        </div>
+      )}
 
       {/* Empty State */}
       {forecasters.length === 0 ? (

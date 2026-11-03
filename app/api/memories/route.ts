@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllMemories, saveMemory, checkWalrusConnection } from "@/lib/walrus";
+import { getAllMemories, getAllMemoriesWithMeta, saveMemory, checkWalrusConnection } from "@/lib/walrus";
 import { getLatestSuiCheckpointAnchor } from "@/lib/tatum";
 import { MAX_PREDICTION_HORIZON_MS } from "@/lib/resolver";
 import type { PredictionCategory, PredictionRecord, SportsFixtureRef, SportsMarketRef } from "@/lib/types";
@@ -141,8 +141,8 @@ function checkRateLimit(ip: string): { allowed: boolean; message?: string } {
 
 export async function GET() {
   try {
-    const [memories, connectionStatus] = await Promise.all([
-      getAllMemories(),
+    const [{ records: memories, possiblyTruncated }, connectionStatus] = await Promise.all([
+      getAllMemoriesWithMeta(),
       checkWalrusConnection(),
     ]);
 
@@ -150,6 +150,7 @@ export async function GET() {
       success: true,
       count: memories.length,
       data: memories,
+      possiblyTruncated,
       isMainnetConnected: connectionStatus.isMainnetConnected,
       mode: connectionStatus.mode,
       connectionError: connectionStatus.error,
