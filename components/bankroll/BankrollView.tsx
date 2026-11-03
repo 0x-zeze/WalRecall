@@ -15,7 +15,15 @@ import { Wallet, Calculator, AlertTriangle, ExternalLink, Sliders, ShieldCheck, 
 import { SIMULATED_STARTING_BANKROLL, simulatedBalance, cumulativePnlSeries } from "@/lib/dashboard-stats";
 import { computeForecasterStats } from "@/lib/credibility";
 import { parseOdds } from "@/lib/odds";
-import { laplaceWinProbability, calculateKelly } from "@/lib/bankroll";
+import {
+  laplaceWinProbability,
+  calculateKelly,
+  parseStartingCapital,
+  clampStartingCapital,
+  resolveCapitalOnBlur,
+  MIN_STARTING_CAPITAL,
+  MAX_STARTING_CAPITAL,
+} from "@/lib/bankroll";
 import { formatLocalDateLabel } from "@/lib/date-utils";
 import { getWalrusBlobExplorerUrl } from "@/lib/explorer";
 import type { PredictionRecord } from "@/lib/types";
@@ -48,6 +56,47 @@ export function BankrollView({
 }: BankrollViewProps) {
   // Configurable starting capital (free input, not locked to $10,000)
   const [startingCapital, setStartingCapital] = useState<number>(SIMULATED_STARTING_BANKROLL);
+  const [capitalInput, setCapitalInput] = useState<string>(String(SIMULATED_STARTING_BANKROLL));
+  const [capitalError, setCapitalError] = useState<string | null>(null);
+
+  const handleCapitalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setCapitalInput(raw);
+    const parsed = parseStartingCapital(raw);
+    if (parsed !== null && parsed >= MIN_STARTING_CAPITAL && parsed <= MAX_STARTING_CAPITAL) {
+      setStartingCapital(parsed);
+      setCapitalError(null);
+    } else if (parsed !== null && (parsed < MIN_STARTING_CAPITAL || parsed > MAX_STARTING_CAPITAL)) {
+      setCapitalError(
+        parsed < MIN_STARTING_CAPITAL
+          ? `Min capital is $${MIN_STARTING_CAPITAL}`
+          : `Max capital is $${MAX_STARTING_CAPITAL.toLocaleString()}`
+      );
+    } else {
+      setCapitalError(null);
+    }
+  };
+
+  const handleCapitalBlur = () => {
+    const resolved = resolveCapitalOnBlur(capitalInput, startingCapital);
+    setStartingCapital(resolved.value);
+    setCapitalInput(resolved.formatted);
+    if (resolved.outOfRange) {
+      setCapitalError(
+        `Adjusted to valid range ($${MIN_STARTING_CAPITAL} - $${MAX_STARTING_CAPITAL.toLocaleString()})`
+      );
+      setTimeout(() => setCapitalError(null), 3000);
+    } else {
+      setCapitalError(null);
+    }
+  };
+
+  const applyPresetCapital = (amt: number) => {
+    const clamped = clampStartingCapital(amt);
+    setStartingCapital(clamped);
+    setCapitalInput(String(clamped));
+    setCapitalError(null);
+  };
 
   // Total resolved net PnL from records
   const totalResolvedPnl = useMemo(() => {
@@ -207,18 +256,31 @@ export function BankrollView({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           {/* Direct Numeric Input */}
-          <div className="relative flex items-center min-w-[140px]">
-            <span className="absolute left-3 text-xs font-bold text-[var(--muted)] font-mono-num">$</span>
-            <input
-              type="number"
-              min="10"
-              step="500"
-              value={startingCapital}
-              onChange={(e) => setStartingCapital(Math.max(10, Number(e.target.value) || 10))}
-              className="w-full pl-7 pr-3 py-1.5 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-sm font-bold font-mono-num text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
-            />
+          <div className="flex flex-col">
+            <div className="relative flex items-center min-w-[140px]">
+              <span className="absolute left-3 text-xs font-bold text-[var(--muted)] font-mono-num">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={capitalInput}
+                onChange={handleCapitalChange}
+                onBlur={handleCapitalBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleCapitalBlur();
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="w-full pl-7 pr-3 py-1.5 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-sm font-bold font-mono-num text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
+              />
+            </div>
+            {capitalError && (
+              <span className="text-[10px] text-[var(--loss)] font-mono-num mt-1 block">
+                {capitalError}
+              </span>
+            )}
           </div>
 
           {/* Quick Preset Chips */}
@@ -227,7 +289,7 @@ export function BankrollView({
               <button
                 key={amt}
                 type="button"
-                onClick={() => setStartingCapital(amt)}
+                onClick={() => applyPresetCapital(amt)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-mono-num font-medium border transition-all ${
                   startingCapital === amt
                     ? "bg-[var(--accent)] text-white border-[var(--accent)] font-semibold shadow-sm"
@@ -242,7 +304,7 @@ export function BankrollView({
             {startingCapital !== SIMULATED_STARTING_BANKROLL && (
               <button
                 type="button"
-                onClick={() => setStartingCapital(SIMULATED_STARTING_BANKROLL)}
+                onClick={() => applyPresetCapital(SIMULATED_STARTING_BANKROLL)}
                 title="Reset to default $10,000"
                 className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] transition"
               >

@@ -98,47 +98,8 @@ export interface ResolutionResult {
  *      it is a decimal separator -> replace comma with period -> 0.9, 1.5, 1.25, 2.5.
  * 3. Handles 'k' / 'K' suffix multiplier (e.g. "69k" -> 69000, "1.5k" -> 1500).
  */
-export function normalizePriceString(raw: string): number | null {
-  if (!raw || typeof raw !== "string") return null;
-  const str = raw.trim().toLowerCase();
-
-  // Handle 'k' / 'K' suffix
-  const kMatch = str.match(/([\d.,]+)\s*k\b/);
-  if (kMatch) {
-    const base = normalizePriceString(kMatch[1]);
-    return base !== null && base > 0 ? base * 1000 : null;
-  }
-
-  // Extract clean number token with digits, commas, periods
-  const tokenMatch = str.match(/[\d.,]+/);
-  if (!tokenMatch) return null;
-  let token = tokenMatch[0];
-
-  const hasComma = token.includes(",");
-  const hasDot = token.includes(".");
-
-  if (hasComma && hasDot) {
-    const lastComma = token.lastIndexOf(",");
-    const lastDot = token.lastIndexOf(".");
-    if (lastDot > lastComma) {
-      token = token.replace(/,/g, "");
-    } else {
-      token = token.replace(/\./g, "").replace(",", ".");
-    }
-  } else if (hasComma) {
-    // "0,925" adalah desimal 0.925, sedangkan "1,234" dan "77,890" adalah pemisah ribuan.
-    // Grup ribuan tidak pernah diawali angka 0.
-    const thousandsPattern = /^[1-9]\d{0,2}(,\d{3})+$/;
-    if (thousandsPattern.test(token)) {
-      token = token.replace(/,/g, "");
-    } else {
-      token = token.replace(",", ".");
-    }
-  }
-
-  const val = parseFloat(token);
-  return !isNaN(val) && val > 0 ? val : null;
-}
+import { normalizePriceString } from "./bankroll";
+export { normalizePriceString };
 
 /**
  * Parses crypto price target and direction from record or pick/content strings.

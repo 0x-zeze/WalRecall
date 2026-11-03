@@ -57,7 +57,15 @@ import {
   computeConfidenceAnalytics,
   computeMonthlyPnlAnalytics,
 } from "../lib/analytics.ts";
-import { laplaceWinProbability, calculateKelly } from "../lib/bankroll.ts";
+import {
+  laplaceWinProbability,
+  calculateKelly,
+  parseStartingCapital,
+  clampStartingCapital,
+  resolveCapitalOnBlur,
+  MIN_STARTING_CAPITAL,
+  MAX_STARTING_CAPITAL,
+} from "../lib/bankroll.ts";
 
 let passed = 0;
 let failed = 0;
@@ -3658,6 +3666,58 @@ async function main() {
       ];
       // Starting 10000 + 450 - 200 = 10250
       assert.equal(simulatedBalance(records, 10000), 10250);
+    });
+
+    await it("BUG 4: parseStartingCapital parses 5000, rejects abc, handles commas and empty safely", () => {
+      // 1. "5000" -> 5000
+      assert.equal(parseStartingCapital("5000"), 5000);
+      assert.equal(parseStartingCapital(" 5000 "), 5000);
+
+      // 2. "" returns null (does not change stored value when typing)
+      assert.equal(parseStartingCapital(""), null);
+      assert.equal(parseStartingCapital("   "), null);
+
+      // 3. "abc" rejected -> null
+      assert.equal(parseStartingCapital("abc"), null);
+      assert.equal(parseStartingCapital("$$$"), null);
+
+      // 4. "1,5" or "1.5" or "5,000" or "5k" handles correctly without NaN
+      assert.equal(parseStartingCapital("1,5"), 1.5);
+      assert.equal(parseStartingCapital("5,000"), 5000);
+      assert.equal(parseStartingCapital("5k"), 5000);
+      assert.equal(parseStartingCapital("$10,000"), 10000);
+    });
+
+    await it("BUG 4: resolveCapitalOnBlur clamps values, handles blur with empty string, prevents NaN/Infinity", () => {
+      // Valid input inside range [10, 1_000_000_000]
+      const rValid = resolveCapitalOnBlur("5000", 10000);
+      assert.equal(rValid.value, 5000);
+      assert.equal(rValid.formatted, "5000");
+      assert.equal(rValid.outOfRange, false);
+
+      // Empty input falls back to current stored value (not forced to 10 immediately!)
+      const rEmpty = resolveCapitalOnBlur("", 5000);
+      assert.equal(rEmpty.value, 5000);
+      assert.equal(rEmpty.formatted, "5000");
+      assert.equal(rEmpty.outOfRange, false);
+
+      // Too small (< 10) clamped to MIN (10)
+      const rLow = resolveCapitalOnBlur("2", 10000);
+      assert.equal(rLow.value, MIN_STARTING_CAPITAL);
+      assert.equal(rLow.formatted, "10");
+      assert.equal(rLow.outOfRange, true);
+
+      // Too large (> 1,000,000,000) clamped to MAX
+      const rHigh = resolveCapitalOnBlur("99999999999", 10000);
+      assert.equal(rHigh.value, MAX_STARTING_CAPITAL);
+      assert.equal(rHigh.formatted, "1000000000");
+      assert.equal(rHigh.outOfRange, true);
+
+      // NaN / Infinity guard: clampStartingCapital always returns finite
+      assert.equal(clampStartingCapital(NaN), 10);
+      assert.equal(clampStartingCapital(Infinity), 10);
+      assert.equal(clampStartingCapital(-100), 10);
+      assert.ok(Number.isFinite(simulatedBalance([], clampStartingCapital(NaN))));
     });
   });
 
