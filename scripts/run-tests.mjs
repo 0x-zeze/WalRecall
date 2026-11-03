@@ -4222,6 +4222,127 @@ async function main() {
       setCustomMemWalClient(null);
       invalidateRecallCache();
     });
+
+    await it("total > results.length -> possiblyTruncated true", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hit1 = createMockHit("pred-total-1", 1000);
+      const hit2 = createMockHit("pred-total-2", 2000);
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            // total is 5, but results only has 2 items -> possiblyTruncated must be true!
+            return { results: [hit1, hit2], total: 5 };
+          }
+          return { results: [], total: 0 };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, possiblyTruncated } = await getAllMemoriesWithMeta();
+
+      assert.equal(records.length, 2);
+      assert.equal(possiblyTruncated, true);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("dropped_count 2 -> droppedCount 2 dan satu retry", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hit1 = createMockHit("pred-dropped-1", 1000);
+      let predictionQueryCalls = 0;
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            predictionQueryCalls++;
+            // Both initial and retry return dropped_count: 2
+            return { results: [hit1], total: 3, dropped_count: 2 };
+          }
+          return { results: [], total: 0 };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, droppedCount } = await getAllMemoriesWithMeta();
+
+      assert.equal(records.length, 1);
+      assert.equal(droppedCount, 2);
+      // Query "prediction" must have been called exactly 2 times (1 initial + 1 retry)
+      assert.equal(predictionQueryCalls, 2);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("retry sukses menghapus peringatan", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hit1 = createMockHit("pred-recover-1", 1000);
+      const hit2 = createMockHit("pred-recover-2", 2000);
+      let predictionQueryCalls = 0;
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            predictionQueryCalls++;
+            if (predictionQueryCalls === 1) {
+              // Attempt 1: dropped_count 2
+              return { results: [hit1], total: 3, dropped_count: 2 };
+            }
+            // Retry (Attempt 2): succeeded, dropped_count 0
+            return { results: [hit1, hit2], total: 2, dropped_count: 0 };
+          }
+          return { results: [], total: 0 };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, droppedCount } = await getAllMemoriesWithMeta();
+
+      assert.equal(predictionQueryCalls, 2);
+      assert.equal(droppedCount, 0); // Peringatan terhapus
+      assert.equal(records.length, 2);
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
+
+    await it("tanpa field tambahan perilaku lama tetap", async () => {
+      invalidateRecallCache();
+      setCustomGetAllMemories(null);
+
+      const hit1 = createMockHit("pred-plain-1", 1000);
+      let predictionQueryCalls = 0;
+
+      const mockClient = {
+        recall: async ({ query }) => {
+          if (query.includes("prediction")) {
+            predictionQueryCalls++;
+            // Plain legacy object: only results
+            return { results: [hit1] };
+          }
+          return { results: [] };
+        },
+      };
+
+      setCustomMemWalClient(mockClient);
+      const { records, possiblyTruncated, droppedCount } = await getAllMemoriesWithMeta();
+
+      assert.equal(records.length, 1);
+      assert.equal(possiblyTruncated, false);
+      assert.equal(droppedCount, 0);
+      assert.equal(predictionQueryCalls, 1); // No retry triggered
+
+      setCustomMemWalClient(null);
+      invalidateRecallCache();
+    });
   });
 
   console.log("\n=================================================");

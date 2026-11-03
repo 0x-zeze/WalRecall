@@ -141,7 +141,7 @@ function checkRateLimit(ip: string): { allowed: boolean; message?: string } {
 
 export async function GET() {
   try {
-    const [{ records: memories, possiblyTruncated }, connectionStatus] = await Promise.all([
+    const [{ records: memories, possiblyTruncated, droppedCount = 0 }, connectionStatus] = await Promise.all([
       getAllMemoriesWithMeta(),
       checkWalrusConnection(),
     ]);
@@ -151,6 +151,7 @@ export async function GET() {
       count: memories.length,
       data: memories,
       possiblyTruncated,
+      droppedCount,
       isMainnetConnected: connectionStatus.isMainnetConnected,
       mode: connectionStatus.mode,
       connectionError: connectionStatus.error,

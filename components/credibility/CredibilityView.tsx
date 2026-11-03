@@ -29,6 +29,7 @@ interface CredibilityViewProps {
   walrusMemoriesCount: number;
   isMainnetConnected?: boolean;
   possiblyTruncated?: boolean;
+  droppedCount?: number;
 }
 
 export function CredibilityView({
@@ -36,6 +37,7 @@ export function CredibilityView({
   walrusMemoriesCount,
   isMainnetConnected = false,
   possiblyTruncated = false,
+  droppedCount = 0,
 }: CredibilityViewProps) {
   // PURE CALCULATION: Derived strictly from actual predictions / recalled memories
   const forecasters: ForecasterAnalysis[] = useMemo(() => {
@@ -117,6 +119,14 @@ export function CredibilityView({
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono-num shadow-sm">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
           <span>Showing {predictions.length} records; recall may be truncated</span>
+        </div>
+      )}
+
+      {/* Dropped records warning indicator */}
+      {droppedCount > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono-num shadow-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>{droppedCount} records could not be read from Walrus; stats may be incomplete</span>
         </div>
       )}
 

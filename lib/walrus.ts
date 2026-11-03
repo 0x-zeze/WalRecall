@@ -96,13 +96,14 @@ export const RECALL_QUERIES = [
   "ALPHARECALL_V1 crypto SUI BTC ETH",
 ] as const;
 
-export const RECALL_LIMIT_PER_QUERY = 100; // Relayer max limit per SDK RecallOptions
+export const RECALL_LIMIT_PER_QUERY = 100; // Batas server tidak terdokumentasi di tipe SDK; deteksi pemotongan memakai total (total > results.length)
 export const RECALL_TIMEOUT_MS = 10000;    // 10s budget per request
 export const RECALL_CACHE_TTL_MS = 45000;  // 45s in-memory cache
 
 export interface RecallCacheEntry {
   records: MemoryRecord[];
   possiblyTruncated: boolean;
+  droppedCount: number;
   cachedAt: number;
 }
 let recallCache: RecallCacheEntry | null = null;
@@ -118,6 +119,7 @@ export function getRecallCacheForTesting(): RecallCacheEntry | null {
 export interface GetAllMemoriesResult {
   records: MemoryRecord[];
   possiblyTruncated: boolean;
+  droppedCount: number;
   fromCache?: boolean;
   stale?: boolean;
 }
@@ -131,7 +133,7 @@ export interface GetAllMemoriesResult {
 export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
   if (customGetAllMemories) {
     const records = await customGetAllMemories();
-    return { records, possiblyTruncated: false };
+    return { records, possiblyTruncated: false, droppedCount: 0 };
   }
 
   const now = Date.now();
@@ -139,6 +141,7 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
     return {
       records: recallCache.records,
       possiblyTruncated: recallCache.possiblyTruncated,
+      droppedCount: recallCache.droppedCount,
       fromCache: true,
     };
   }
@@ -148,30 +151,96 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
     return {
       records: dedupePredictions(localDemoCache),
       possiblyTruncated: false,
+      droppedCount: 0,
     };
   }
 
   try {
     const settled = await Promise.allSettled(
-      RECALL_QUERIES.map((query) =>
-        client.recall({
+      RECALL_QUERIES.map(async (query) => {
+        const queryStart = Date.now();
+        const res = await client.recall({
           query,
           limit: RECALL_LIMIT_PER_QUERY,
           timeoutMs: RECALL_TIMEOUT_MS,
-        })
-      )
+        });
+
+        const initialDropped =
+          typeof res === "object" &&
+          res !== null &&
+          "dropped_count" in res &&
+          typeof (res as { dropped_count?: unknown }).dropped_count === "number" &&
+          ((res as { dropped_count: number }).dropped_count > 0)
+            ? (res as { dropped_count: number }).dropped_count
+            : 0;
+
+        if (initialDropped > 0) {
+          const elapsed = Date.now() - queryStart;
+          const remainingBudget = Math.max(1000, RECALL_TIMEOUT_MS - elapsed - 100);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          try {
+            const retryRes = await client.recall({
+              query,
+              limit: RECALL_LIMIT_PER_QUERY,
+              timeoutMs: remainingBudget,
+            });
+
+            const retryDropped =
+              typeof retryRes === "object" &&
+              retryRes !== null &&
+              "dropped_count" in retryRes &&
+              typeof (retryRes as { dropped_count?: unknown }).dropped_count === "number" &&
+              ((retryRes as { dropped_count: number }).dropped_count > 0)
+                ? (retryRes as { dropped_count: number }).dropped_count
+                : 0;
+
+            const origLen = Array.isArray((res as { results?: unknown[] })?.results)
+              ? (res as { results: unknown[] }).results.length
+              : 0;
+            const retryLen = Array.isArray((retryRes as { results?: unknown[] })?.results)
+              ? (retryRes as { results: unknown[] }).results.length
+              : 0;
+
+            // Pakai hasil terbaik: dropped lebih sedikit, atau bila sama, hasil records lebih banyak/sama
+            if (retryDropped < initialDropped || (retryDropped === initialDropped && retryLen >= origLen)) {
+              return retryRes;
+            }
+            return res;
+          } catch {
+            return res;
+          }
+        }
+
+        return res;
+      })
     );
 
     let anySuccess = false;
     let possiblyTruncated = false;
+    let droppedCount = 0;
     const combinedHits: Array<{ blob_id?: string; text: string }> = [];
 
     settled.forEach((res, i) => {
       if (res.status === "fulfilled") {
         anySuccess = true;
-        const results = (res.value as { results?: Array<{ blob_id?: string; text: string }> })?.results;
+        const val = res.value as {
+          results?: Array<{ blob_id?: string; text: string }>;
+          total?: number;
+          dropped_count?: number;
+        };
+        const results = val?.results;
+        const total = val?.total;
+        const dropped =
+          typeof val?.dropped_count === "number" && val.dropped_count > 0
+            ? val.dropped_count
+            : 0;
+        droppedCount += dropped;
+
         if (Array.isArray(results)) {
-          if (results.length >= RECALL_LIMIT_PER_QUERY) {
+          if (
+            results.length >= RECALL_LIMIT_PER_QUERY ||
+            (typeof total === "number" && total > results.length)
+          ) {
             possiblyTruncated = true;
           }
           combinedHits.push(...results);
@@ -187,6 +256,7 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
         return {
           records: recallCache.records,
           possiblyTruncated: recallCache.possiblyTruncated,
+          droppedCount: recallCache.droppedCount,
           fromCache: true,
           stale: true,
         };
@@ -194,6 +264,7 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
       return {
         records: dedupePredictions(localDemoCache),
         possiblyTruncated: false,
+        droppedCount: 0,
       };
     }
 
@@ -222,12 +293,14 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
     recallCache = {
       records: finalRecords,
       possiblyTruncated,
+      droppedCount,
       cachedAt: Date.now(),
     };
 
     return {
       records: finalRecords,
       possiblyTruncated,
+      droppedCount,
     };
   } catch (error) {
     console.warn("Falling back after Walrus recall failure:", error);
@@ -235,6 +308,7 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
       return {
         records: recallCache.records,
         possiblyTruncated: recallCache.possiblyTruncated,
+        droppedCount: recallCache.droppedCount,
         fromCache: true,
         stale: true,
       };
@@ -242,6 +316,7 @@ export async function getAllMemoriesWithMeta(): Promise<GetAllMemoriesResult> {
     return {
       records: dedupePredictions(localDemoCache),
       possiblyTruncated: false,
+      droppedCount: 0,
     };
   }
 }

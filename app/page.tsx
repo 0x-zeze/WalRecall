@@ -32,6 +32,7 @@ export default function Home() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isMainnetConnected, setIsMainnetConnected] = useState<boolean>(false);
   const [possiblyTruncated, setPossiblyTruncated] = useState<boolean>(false);
+  const [droppedCount, setDroppedCount] = useState<number>(0);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -57,6 +58,7 @@ export default function Home() {
       if (memData?.success) {
         setIsMainnetConnected(Boolean(memData.isMainnetConnected));
         setPossiblyTruncated(Boolean(memData.possiblyTruncated));
+        setDroppedCount(typeof memData.droppedCount === "number" ? memData.droppedCount : 0);
 
         if (memData.data?.length > 0) {
           const liveRecords: PredictionRecord[] = memData.data.map((m: Partial<PredictionRecord>, idx: number) => ({
@@ -247,6 +249,7 @@ export default function Home() {
               walrusMemoriesCount={countOnChainBlobs(predictions)}
               isMainnetConnected={isMainnetConnected}
               possiblyTruncated={possiblyTruncated}
+              droppedCount={droppedCount}
             />
           )}
 

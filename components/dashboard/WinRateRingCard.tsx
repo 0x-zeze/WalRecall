@@ -2,7 +2,6 @@
 
 import React from "react";
 import { BentoCard, BentoHeader } from "../ui/BentoCard";
-import { AnimatedNumber } from "../ui/AnimatedNumber";
 
 interface WinRateRingCardProps {
   winRate: number;
